@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>English Master: v26 Pro (Pronunciation)</title>
+    <title>English Master: v26 Pro (Pronunciation Fixed)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -696,6 +696,10 @@
                     body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
                 });
                 const data = await response.json();
+                
+                // Add error check
+                if (data.error) throw new Error(data.error.message);
+
                 let text = data.candidates?.[0]?.content?.parts?.[0]?.text.replace(/```json/g, '').replace(/```/g, '').trim();
                 const topics = JSON.parse(text);
                 container.innerHTML = '';
@@ -735,8 +739,11 @@
                         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
                     });
                     const data = await res.json();
+                    
+                    if (data.error) throw new Error(data.error.message);
+
                     text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-                } catch(e) { hideLoader(); return alert("Lỗi: " + e.message); }
+                } catch(e) { hideLoader(); return alert("Lỗi: " + e.message + "\nKiểm tra lại API Key."); }
             } else text = document.getElementById('genText').value.trim();
             
             if(!text) return alert("Thiếu văn bản.");
@@ -760,7 +767,7 @@
                     setTimeout(() => togglePlay(), 500);
                 };
                 reader.readAsDataURL(wavBlob);
-            } catch(e) { hideLoader(); alert("Lỗi TTS: " + e.message); }
+            } catch(e) { hideLoader(); alert("Lỗi TTS: " + e.message + "\nKiểm tra lại API Key."); }
         }
         async function callGeminiTTS(text) {
             const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${getApiKey()}`, {
@@ -768,6 +775,7 @@
                 body: JSON.stringify({ contents: [{ parts: [{ text: text }] }], generationConfig: { responseModalities: ["AUDIO"], speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: "Aoede" } } } } })
             });
             const data = await res.json();
+            if(data.error) throw new Error(data.error.message);
             return data.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
         }
         function pcmToWav(base64PCM) {
@@ -893,6 +901,9 @@
                     body: JSON.stringify({ contents: [{ parts: [{ text: prompt }, { inline_data: { mime_type: currentMimeType, data: currentAudioBase64 } }] }] })
                 });
                 const data = await resp.json();
+                
+                if (data.error) throw new Error(data.error.message);
+
                 let txt = data.candidates?.[0]?.content?.parts?.[0]?.text;
                 
                 let segments = [];
@@ -909,7 +920,7 @@
                 targetText.value = segments.map(s => s.text).join(' ');
                 hasTranscript = true; 
                 showToast("Đã tạo Transcript!");
-            } catch(e) { alert("Lỗi: " + e.message); }
+            } catch(e) { alert("Lỗi: " + e.message + "\nKiểm tra lại API Key."); }
         }
 
         function renderRealtimeTranscript() {
@@ -991,9 +1002,12 @@
                 const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${getApiKey()}`, {
                     method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
                 });
-                const data = await resp.json();
+                const data = await res.json();
+                
+                if(data.error) throw new Error(data.error.message);
+
                 res.innerHTML = data.candidates?.[0]?.content?.parts?.[0]?.text.replace(/\n/g, '<br>') || "Lỗi.";
-            } catch(e) { res.innerText = "Error."; } finally { btn.disabled = false; btn.innerHTML = `<i class="fas fa-microscope mr-1"></i> Phân tích lỗi (AI)`; }
+            } catch(e) { res.innerText = "Error: " + e.message; } finally { btn.disabled = false; btn.innerHTML = `<i class="fas fa-microscope mr-1"></i> Phân tích lỗi (AI)`; }
         }
 
         // --- QUIZ & READING & WRITING ---
@@ -1007,11 +1021,14 @@
                     body: JSON.stringify({ contents: [{ parts: [{ text: prompt }, { inline_data: { mime_type: currentMimeType, data: currentAudioBase64 } }] }] })
                 });
                 const data = await resp.json();
+
+                if (data.error) throw new Error(data.error.message);
+
                 let txt = data.candidates?.[0]?.content?.parts?.[0]?.text;
                 txt = txt.replace(/```json/g,'').replace(/```/g,'').trim();
                 quizData = JSON.parse(txt.match(/\[[\s\S]*\]/)[0]);
                 renderQuiz();
-            } catch(e) { alert("Lỗi: " + e.message); } finally { btn.disabled = false; btn.innerHTML = '<i class="fas fa-bolt mr-2 text-yellow-300"></i> Tạo câu hỏi ngay'; }
+            } catch(e) { alert("Lỗi: " + e.message + "\nKiểm tra lại API Key."); } finally { btn.disabled = false; btn.innerHTML = '<i class="fas fa-bolt mr-2 text-yellow-300"></i> Tạo câu hỏi ngay'; }
         }
 
         function renderQuiz() {
@@ -1059,6 +1076,9 @@
                     method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
                 });
                 const data = await res.json();
+                
+                if (data.error) throw new Error(data.error.message);
+
                 let txt = data.candidates?.[0]?.content?.parts?.[0]?.text.replace(/```json/g,'').replace(/```/g,'').trim();
                 const json = JSON.parse(txt.match(/\{[\s\S]*\}/)[0]);
                 
@@ -1070,7 +1090,7 @@
                 readingQuizData = json.questions;
                 renderReadingQuiz();
                 document.getElementById('readingModal').classList.add('hidden');
-            } catch(e) { alert(e); } finally { btn.disabled=false; btn.innerHTML="Tạo Đề Ngay"; }
+            } catch(e) { alert("Lỗi: " + e.message + "\nKiểm tra lại API Key."); } finally { btn.disabled=false; btn.innerHTML="Tạo Đề Ngay"; }
         }
         
         function renderReadingQuiz() {
@@ -1136,6 +1156,9 @@
                     method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
                 });
                 const data = await res.json();
+                
+                if (data.error) throw new Error(data.error.message);
+
                 let csv = data.candidates?.[0]?.content?.parts?.[0]?.text.replace(/```csv/g, '').replace(/```/g, '').trim();
                 downloadCSV(csv, 'Vocabulary_List.csv');
                 showToast("Đã tải danh sách từ vựng!");
@@ -1157,10 +1180,13 @@
                     method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ contents: [{ parts: [{ text: `Generate random writing topic for ${level}. Text only.` }] }] })
                 });
                 const data = await res.json();
+                
+                if (data.error) throw new Error(data.error.message);
+
                 const topic = data.candidates?.[0]?.content?.parts?.[0]?.text;
                 const d = document.getElementById('writingTopicDisplay'); d.innerText=topic; d.classList.remove('hidden');
                 document.getElementById('btnGetHints').classList.remove('hidden');
-            } catch(e){alert(e);} finally { btn.disabled=false; }
+            } catch(e){alert("Lỗi: " + e.message + "\nKiểm tra lại API Key.");} finally { btn.disabled=false; }
         }
         
         async function getWritingHints() {
@@ -1171,8 +1197,11 @@
                     method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ contents: [{ parts: [{ text: `Hints/Vocab for topic: "${topic}". Vietnamese.` }] }] })
                 });
                 const data = await res.json();
+                
+                if (data.error) throw new Error(data.error.message);
+
                 const h = document.getElementById('writingHints'); h.innerHTML=data.candidates?.[0]?.content?.parts?.[0]?.text.replace(/\n/g,'<br>'); h.classList.remove('hidden');
-            } catch(e){alert(e);}
+            } catch(e){alert("Lỗi: " + e.message + "\nKiểm tra lại API Key.");}
         }
 
         async function evaluateWriting() {
@@ -1185,9 +1214,12 @@
                     method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ parts: [{ text: `Evaluate essay. Topic: ${topic}. Essay: ${essay}. Vietnamese.` }] }] })
                 });
                 const data = await res.json();
+                
+                if (data.error) throw new Error(data.error.message);
+
                 document.getElementById('feedbackContent').innerHTML = data.candidates?.[0]?.content?.parts?.[0]?.text.replace(/\n/g, '<br>');
                 document.getElementById('writingFeedback').classList.remove('hidden');
-            } catch(e) { alert(e); } finally { btn.innerText = "Chấm điểm & Sửa lỗi"; btn.disabled = false; }
+            } catch(e) { alert("Lỗi: " + e.message + "\nKiểm tra lại API Key."); } finally { btn.innerText = "Chấm điểm & Sửa lỗi"; btn.disabled = false; }
         }
 
         // --- EXPORT TO DEEP DRILL (UPDATED) ---
@@ -1225,6 +1257,9 @@
                     body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
                 });
                 const data = await res.json();
+
+                if (data.error) throw new Error(data.error.message);
+
                 let csvContent = data.candidates?.[0]?.content?.parts?.[0]?.text;
                 csvContent = csvContent.replace(/```csv/g, '').replace(/```/g, '').trim();
                 
@@ -1233,7 +1268,7 @@
                 downloadCSV(csvContent, `DeepDrill_Export_${Date.now()}.csv`);
                 showToast("Đã tải xuống file CSV!");
             } catch(e) {
-                alert("Lỗi trích xuất: " + e.message);
+                alert("Lỗi trích xuất: " + e.message + "\nKiểm tra lại API Key.");
             } finally {
                 hideLoader();
             }
@@ -1261,10 +1296,13 @@
                     body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
                 });
                 const data = await res.json();
+
+                if (data.error) throw new Error(data.error.message);
+
                 let csvContent = data.candidates?.[0]?.content?.parts?.[0]?.text.replace(/```csv/g, '').replace(/```/g, '').trim();
                 downloadCSV(csvContent, `DeepDrill_Reading_${Date.now()}.csv`);
                 showToast("Đã tải xuống CSV!");
-            } catch(e) { alert("Lỗi: " + e.message); } finally { hideLoader(); }
+            } catch(e) { alert("Lỗi: " + e.message + "\nKiểm tra lại API Key."); } finally { hideLoader(); }
         }
 
         function downloadCSV(content, filename) {
@@ -1585,6 +1623,16 @@
                     method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
                 });
                 const data = await res.json();
+                
+                // Add explicit error handling for API issues
+                if (data.error) {
+                    throw new Error(data.error.message);
+                }
+
+                if (!data.candidates || !data.candidates[0]) {
+                    throw new Error("Không nhận được phản hồi từ AI (Có thể do mạng hoặc Key).");
+                }
+
                 let txt = data.candidates?.[0]?.content?.parts?.[0]?.text.replace(/```json/g, '').replace(/```/g, '').trim();
                 const json = JSON.parse(txt);
                 
@@ -1597,7 +1645,7 @@
                 renderPronunciationDrill();
                 showToast("Đã tạo bài tập mới!");
             } catch(e) {
-                alert("Lỗi AI: " + e.message);
+                alert("Lỗi AI: " + e.message + "\n\nHãy kiểm tra lại API Key trong phần cài đặt (bánh răng).");
             } finally {
                 btn.disabled = false; btn.innerHTML = '<i class="fas fa-sync-alt mr-2"></i> Tạo bài tập (AI)';
                 hideLoader();
