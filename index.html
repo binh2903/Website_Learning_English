@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>English Master: v26 Pronunciation Coach</title>
+    <title>English Master: v27 Deploy Stable</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -17,7 +17,7 @@
         .t-segment:hover { background-color: #e0e7ff; color: #4338ca; }
         .t-active { background-color: #fef08a; color: #854d0e; font-weight: bold; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
 
-        /* Deep Drill Animations */
+        /* Animations */
         .shake { animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both; }
         .pop-in { animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
         .pulse-ring { animation: pulse-ring 2s infinite; }
@@ -25,53 +25,46 @@
         @keyframes popIn { from { transform: scale(0.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
         @keyframes shake { 10%, 90% { transform: translate3d(-1px, 0, 0); } 20%, 80% { transform: translate3d(2px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-4px, 0, 0); } 40%, 60% { transform: translate3d(4px, 0, 0); } }
         @keyframes pulse-ring { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade-in-up { animation: fadeInUp 0.2s ease-out; }
 
         /* Audio Player */
         input[type=range] { -webkit-appearance: none; background: transparent; }
         input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 16px; width: 16px; border-radius: 50%; background: #4f46e5; margin-top: -6px; box-shadow: 0 1px 3px rgba(0,0,0,0.3); cursor: pointer; }
         input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cursor: pointer; background: #e2e8f0; border-radius: 2px; }
         
-        /* Loading */
-        .ai-loading {
-            animation: shimmer 2s infinite linear;
-            background: linear-gradient(to right, #eff6ff 4%, #e0e7ff 25%, #eff6ff 36%);
-            background-size: 1000px 100%;
-        }
-        @keyframes shimmer { 0% { background-position: -1000px 0; } 100% { background-position: 1000px 0; } }
-
-        /* Tabs */
+        /* Tabs & Utils */
         .tab-active { border-bottom: 2px solid #4f46e5; color: #4f46e5; font-weight: bold; background-color: #eef2ff; }
         .tab-inactive { color: #6b7280; hover:text-gray-800; hover:bg-gray-50; }
-        
-        /* Modal Overlay */
         .modal-overlay { background-color: rgba(0, 0, 0, 0.5); z-index: 50; }
         #fullScreenLoader { z-index: 100; }
-        
-        /* API Key Box Animation */
-        @keyframes fadeInUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .animate-fade-in-up { animation: fadeInUp 0.2s ease-out; }
+        .trend-chip { cursor: pointer; transition: all 0.2s; }
+        .trend-chip:hover { transform: translateY(-2px); box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
     </style>
 </head>
 <body class="h-screen flex flex-col items-center p-2 sm:p-4 bg-gradient-to-br from-blue-50 to-indigo-50 overflow-hidden">
 
-    <!-- API KEY MINI TOOL -->
+    <!-- API KEY MINI TOOL (Auto Open if Empty) -->
     <div id="apiKeyContainer" class="fixed bottom-4 left-4 z-50 flex flex-col items-start">
-        <div id="apiKeyInputBox" class="hidden bg-white p-3 rounded-lg shadow-xl border border-gray-200 mb-2 w-72 animate-fade-in-up relative">
+        <div id="apiKeyInputBox" class="hidden bg-white p-4 rounded-lg shadow-2xl border border-gray-200 mb-2 w-80 animate-fade-in-up relative">
             <div class="absolute -bottom-1 left-4 w-2 h-2 bg-white transform rotate-45 border-b border-r border-gray-200"></div>
-            <div class="flex justify-between items-center mb-2">
-                <label class="text-xs font-bold text-gray-700 flex items-center">
-                    <i class="fas fa-key text-yellow-500 mr-1.5"></i> Gemini API Key
+            <div class="flex justify-between items-center mb-3">
+                <label class="text-sm font-bold text-indigo-700 flex items-center">
+                    <i class="fas fa-key text-yellow-500 mr-2"></i> Cài đặt API Key
                 </label>
-                <a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-[10px] text-blue-500 hover:underline">Lấy Key</a>
+                <a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-xs text-blue-500 hover:underline flex items-center">
+                    Lấy Key miễn phí <i class="fas fa-external-link-alt ml-1"></i>
+                </a>
             </div>
-            <input type="password" id="userApiKeyInput" class="w-full p-2 border border-gray-300 rounded text-xs mb-2 focus:outline-none focus:border-indigo-500 font-mono text-gray-600" placeholder="Paste your API Key here...">
+            <p class="text-xs text-gray-500 mb-2 leading-relaxed">Để chạy trên Web/GitHub, bạn cần nhập Key riêng của mình. Key sẽ được lưu an toàn trên trình duyệt này.</p>
+            <input type="password" id="userApiKeyInput" class="w-full p-2 border-2 border-gray-300 rounded text-sm mb-3 focus:outline-none focus:border-indigo-500 font-mono text-gray-800 transition" placeholder="Dán API Key vào đây...">
             <div class="flex justify-end space-x-2">
-                <button onclick="toggleApiKeyBox()" class="text-gray-500 hover:bg-gray-100 px-3 py-1.5 rounded text-xs font-medium">Đóng</button>
-                <button onclick="saveUserApiKey()" class="bg-indigo-600 text-white px-3 py-1.5 rounded text-xs font-bold hover:bg-indigo-700 shadow-sm">Lưu Key</button>
+                <button onclick="toggleApiKeyBox()" class="text-gray-500 hover:bg-gray-100 px-3 py-1.5 rounded text-xs font-medium">Để sau</button>
+                <button onclick="saveUserApiKey()" class="bg-indigo-600 text-white px-4 py-1.5 rounded text-xs font-bold hover:bg-indigo-700 shadow-md transition">Lưu & Kết nối</button>
             </div>
         </div>
-        <button onclick="toggleApiKeyBox()" class="w-10 h-10 bg-gray-900 text-white rounded-full shadow-lg flex items-center justify-center hover:bg-gray-800 transition ring-2 ring-white" title="Cài đặt API Key">
-            <i class="fas fa-cog"></i>
+        <button onclick="toggleApiKeyBox()" class="w-12 h-12 bg-gray-900 text-white rounded-full shadow-lg flex items-center justify-center hover:bg-gray-800 transition ring-2 ring-white transform hover:scale-105" title="Cài đặt API Key">
+            <i class="fas fa-cog text-xl"></i>
         </button>
     </div>
 
@@ -199,7 +192,7 @@
     <!-- Header -->
     <div class="w-full max-w-7xl flex flex-col mb-2 flex-shrink-0">
         <div class="flex justify-between items-center mb-2">
-            <h1 class="text-xl sm:text-2xl font-bold text-gray-800"><i class="fas fa-layer-group mr-2 text-indigo-600"></i>English Master <span class="text-xs bg-indigo-600 text-white px-2 py-0.5 rounded-full ml-1">v26</span></h1>
+            <h1 class="text-xl sm:text-2xl font-bold text-gray-800"><i class="fas fa-layer-group mr-2 text-indigo-600"></i>English Master <span class="text-xs bg-indigo-600 text-white px-2 py-0.5 rounded-full ml-1">v27</span></h1>
             
             <div id="audioUploadContainer" class="flex space-x-2 items-center">
                 <button onclick="openAudioGenModal()" class="bg-pink-100 border border-pink-200 hover:bg-pink-200 text-pink-700 px-3 py-1.5 rounded-lg shadow-sm text-sm font-bold transition flex items-center">
