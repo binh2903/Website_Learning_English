@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>English Master: v27 Deploy Stable</title>
+    <title>English Master: v27 Pro (Grammar & Vocab)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -25,46 +25,100 @@
         @keyframes popIn { from { transform: scale(0.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
         @keyframes shake { 10%, 90% { transform: translate3d(-1px, 0, 0); } 20%, 80% { transform: translate3d(2px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-4px, 0, 0); } 40%, 60% { transform: translate3d(4px, 0, 0); } }
         @keyframes pulse-ring { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
-        @keyframes fadeInUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .animate-fade-in-up { animation: fadeInUp 0.2s ease-out; }
 
         /* Audio Player */
         input[type=range] { -webkit-appearance: none; background: transparent; }
         input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 16px; width: 16px; border-radius: 50%; background: #4f46e5; margin-top: -6px; box-shadow: 0 1px 3px rgba(0,0,0,0.3); cursor: pointer; }
         input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cursor: pointer; background: #e2e8f0; border-radius: 2px; }
         
-        /* Tabs & Utils */
+        /* Tabs */
         .tab-active { border-bottom: 2px solid #4f46e5; color: #4f46e5; font-weight: bold; background-color: #eef2ff; }
         .tab-inactive { color: #6b7280; hover:text-gray-800; hover:bg-gray-50; }
+        
+        /* Modal Overlay */
         .modal-overlay { background-color: rgba(0, 0, 0, 0.5); z-index: 50; }
         #fullScreenLoader { z-index: 100; }
-        .trend-chip { cursor: pointer; transition: all 0.2s; }
-        .trend-chip:hover { transform: translateY(-2px); box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        
+        /* API Key Box Animation */
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade-in-up { animation: fadeInUp 0.2s ease-out; }
+
+        /* Pronunciation Card Styles */
+        .pronun-card { transition: transform 0.2s; }
+        .pronun-card:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); }
+
+        /* Admin API Styles */
+        .key-item { transition: all 0.2s; }
+        .key-status-good { background-color: #dcfce7; border-color: #86efac; color: #166534; }
+        .key-status-bad { background-color: #fee2e2; border-color: #fca5a5; color: #991b1b; }
+        .key-status-unknown { background-color: #f3f4f6; border-color: #e5e7eb; color: #4b5563; }
+
+        /* Grammar Tree Styles */
+        .grammar-tree-item { margin-left: 1rem; padding: 2px 0; font-size: 0.9em; color: #4b5563; }
+        .grammar-section-header { cursor: pointer; user-select: none; }
+        .grammar-checkbox { accent-color: #991b1b; } /* Red-800 for grammar theme */
     </style>
 </head>
-<body class="h-screen flex flex-col items-center p-2 sm:p-4 bg-gradient-to-br from-blue-50 to-indigo-50 overflow-hidden">
+<body class="h-screen flex flex-col items-center p-2 sm:p-4 bg-gradient-to-br from-blue-50 to-indigo-50 overflow-hidden" onload="initApp()">
 
-    <!-- API KEY MINI TOOL (Auto Open if Empty) -->
+    <!-- API KEY & ADMIN TOOL -->
     <div id="apiKeyContainer" class="fixed bottom-4 left-4 z-50 flex flex-col items-start">
-        <div id="apiKeyInputBox" class="hidden bg-white p-4 rounded-lg shadow-2xl border border-gray-200 mb-2 w-80 animate-fade-in-up relative">
+        <div id="apiKeyInputBox" class="hidden bg-white p-3 rounded-lg shadow-xl border border-gray-200 mb-2 w-80 animate-fade-in-up relative max-h-[80vh] flex flex-col">
             <div class="absolute -bottom-1 left-4 w-2 h-2 bg-white transform rotate-45 border-b border-r border-gray-200"></div>
-            <div class="flex justify-between items-center mb-3">
-                <label class="text-sm font-bold text-indigo-700 flex items-center">
-                    <i class="fas fa-key text-yellow-500 mr-2"></i> Cài đặt API Key
+            
+            <!-- Header -->
+            <div class="flex justify-between items-center mb-2 flex-shrink-0">
+                <label class="text-xs font-bold text-gray-700 flex items-center">
+                    <i class="fas fa-key text-yellow-500 mr-1.5"></i> Cấu hình API
                 </label>
-                <a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-xs text-blue-500 hover:underline flex items-center">
-                    Lấy Key miễn phí <i class="fas fa-external-link-alt ml-1"></i>
-                </a>
+                <div class="flex space-x-2">
+                    <button onclick="toggleAdminPanel()" class="text-[10px] text-indigo-600 hover:underline font-bold" id="btnAdminToggle">Admin Login</button>
+                    <button onclick="toggleApiKeyBox()" class="text-gray-400 hover:text-gray-600"><i class="fas fa-times"></i></button>
+                </div>
             </div>
-            <p class="text-xs text-gray-500 mb-2 leading-relaxed">Để chạy trên Web/GitHub, bạn cần nhập Key riêng của mình. Key sẽ được lưu an toàn trên trình duyệt này.</p>
-            <input type="password" id="userApiKeyInput" class="w-full p-2 border-2 border-gray-300 rounded text-sm mb-3 focus:outline-none focus:border-indigo-500 font-mono text-gray-800 transition" placeholder="Dán API Key vào đây...">
-            <div class="flex justify-end space-x-2">
-                <button onclick="toggleApiKeyBox()" class="text-gray-500 hover:bg-gray-100 px-3 py-1.5 rounded text-xs font-medium">Để sau</button>
-                <button onclick="saveUserApiKey()" class="bg-indigo-600 text-white px-4 py-1.5 rounded text-xs font-bold hover:bg-indigo-700 shadow-md transition">Lưu & Kết nối</button>
+
+            <!-- Standard User View (Manual Input) -->
+            <div id="userApiView" class="mb-2">
+                <input type="password" id="userApiKeyInput" class="w-full p-2 border border-gray-300 rounded text-xs mb-2 focus:outline-none focus:border-indigo-500 font-mono text-gray-600" placeholder="Nhập Key thủ công (nếu có)...">
+                <button onclick="saveUserApiKey()" class="w-full bg-indigo-600 text-white px-3 py-1.5 rounded text-xs font-bold hover:bg-indigo-700 shadow-sm">Lưu Key Cá Nhân</button>
+            </div>
+
+            <!-- Admin Login View -->
+            <div id="adminLoginView" class="hidden border-t border-gray-100 pt-2">
+                <p class="text-[10px] text-gray-500 mb-1">Nhập mật khẩu quản trị để mở kho Key:</p>
+                <div class="flex space-x-1 mb-1">
+                    <input type="password" id="adminPassInput" class="flex-1 p-2 border border-gray-300 rounded text-xs focus:outline-none focus:border-indigo-500" placeholder="Password...">
+                    <button onclick="checkAdminLogin()" class="bg-gray-800 text-white px-3 py-1.5 rounded text-xs font-bold hover:bg-gray-700">Mở</button>
+                </div>
+                <button onclick="backToUserView()" class="w-full text-gray-500 hover:bg-gray-100 py-1 rounded text-[10px] border border-gray-200 bg-gray-50 transition"><i class="fas fa-arrow-left mr-1"></i> Quay lại nhập thủ công</button>
+                <p id="adminLoginMsg" class="text-[10px] text-red-500 mt-1 hidden">Sai mật khẩu!</p>
+            </div>
+
+            <!-- Admin Dashboard (Unlocked) -->
+            <div id="adminDashboard" class="hidden flex-col flex-1 min-h-0 border-t border-gray-100 pt-2 mt-1">
+                <div class="flex justify-between items-center mb-2 bg-indigo-50 p-2 rounded">
+                    <div class="flex items-center">
+                        <button onclick="backToUserView()" class="mr-2 text-indigo-400 hover:text-indigo-700 transition" title="Thoát ra nhập tay"><i class="fas fa-arrow-left"></i></button>
+                        <span class="text-[10px] font-bold text-indigo-800"><i class="fas fa-robot mr-1"></i>Auto Mode</span>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="toggleAutoRotate" class="sr-only peer" onchange="toggleAutoMode(this.checked)">
+                        <div class="w-7 h-4 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-green-600"></div>
+                    </label>
+                </div>
+
+                <div class="flex-1 overflow-y-auto mb-2 border border-gray-100 rounded bg-gray-50 p-1 custom-scrollbar max-h-40">
+                    <ul id="adminKeyList" class="space-y-1"></ul>
+                </div>
+
+                <div class="flex space-x-1 mt-auto pt-2 border-t border-gray-100">
+                    <input type="text" id="newKeyInput" class="flex-1 p-1.5 border border-gray-300 rounded text-[10px] font-mono" placeholder="Thêm Key mới...">
+                    <button onclick="addNewKey()" class="bg-green-600 text-white px-2 py-1 rounded text-[10px] font-bold hover:bg-green-700"><i class="fas fa-plus"></i></button>
+                </div>
             </div>
         </div>
-        <button onclick="toggleApiKeyBox()" class="w-12 h-12 bg-gray-900 text-white rounded-full shadow-lg flex items-center justify-center hover:bg-gray-800 transition ring-2 ring-white transform hover:scale-105" title="Cài đặt API Key">
-            <i class="fas fa-cog text-xl"></i>
+        <button onclick="toggleApiKeyBox()" class="w-10 h-10 bg-gray-900 text-white rounded-full shadow-lg flex items-center justify-center hover:bg-gray-800 transition ring-2 ring-white" title="Cài đặt API Key">
+            <i class="fas fa-cog"></i>
         </button>
     </div>
 
@@ -192,7 +246,7 @@
     <!-- Header -->
     <div class="w-full max-w-7xl flex flex-col mb-2 flex-shrink-0">
         <div class="flex justify-between items-center mb-2">
-            <h1 class="text-xl sm:text-2xl font-bold text-gray-800"><i class="fas fa-layer-group mr-2 text-indigo-600"></i>English Master <span class="text-xs bg-indigo-600 text-white px-2 py-0.5 rounded-full ml-1">v27</span></h1>
+            <h1 class="text-xl sm:text-2xl font-bold text-gray-800"><i class="fas fa-layer-group mr-2 text-indigo-600"></i>English Master <span class="text-xs bg-indigo-600 text-white px-2 py-0.5 rounded-full ml-1">v27 Pro</span></h1>
             
             <div id="audioUploadContainer" class="flex space-x-2 items-center">
                 <button onclick="openAudioGenModal()" class="bg-pink-100 border border-pink-200 hover:bg-pink-200 text-pink-700 px-3 py-1.5 rounded-lg shadow-sm text-sm font-bold transition flex items-center">
@@ -219,9 +273,6 @@
             <button onclick="switchTab('deep')" id="tabDeep" class="tab-inactive px-4 py-2 transition whitespace-nowrap text-sm sm:text-base text-purple-600">
                 <i class="fas fa-brain mr-1"></i> Deep Drill
             </button>
-            <button onclick="switchTab('pronunciation')" id="tabPronunciation" class="tab-inactive px-4 py-2 transition whitespace-nowrap text-sm sm:text-base text-teal-600">
-                <i class="fas fa-microphone-alt mr-1"></i> Phát âm
-            </button>
             <button onclick="switchTab('quiz')" id="tabQuiz" class="tab-inactive px-4 py-2 transition whitespace-nowrap text-sm sm:text-base">
                 <i class="fas fa-headphones mr-1"></i> Quiz
             </button>
@@ -231,13 +282,19 @@
             <button onclick="switchTab('writing')" id="tabWriting" class="tab-inactive px-4 py-2 transition whitespace-nowrap text-sm sm:text-base text-orange-600">
                 <i class="fas fa-pen-nib mr-1"></i> Writing
             </button>
+            <button onclick="switchTab('pronun')" id="tabPronun" class="tab-inactive px-4 py-2 transition whitespace-nowrap text-sm sm:text-base text-teal-600">
+                <i class="fas fa-microphone-alt mr-1"></i> Pronunciation
+            </button>
+            <button onclick="switchTab('grammar')" id="tabGrammar" class="tab-inactive px-4 py-2 transition whitespace-nowrap text-sm sm:text-base text-red-800">
+                <i class="fas fa-list-check mr-1"></i> Grammar
+            </button>
         </div>
     </div>
 
     <!-- CONTENT AREA -->
     <div class="flex-1 w-full max-w-7xl relative overflow-hidden bg-white rounded-xl shadow-xl border border-gray-100 flex flex-col">
         
-        <!-- AUDIO PLAYER -->
+        <!-- AUDIO PLAYER (Global) -->
         <div id="audioPlayerBar" class="bg-gray-900 text-white p-3 sm:p-4 flex-shrink-0 z-10 transition-all duration-300">
             <div class="flex justify-between items-center mb-3">
                 <div class="text-xs text-gray-400 truncate w-2/3 flex items-center">
@@ -333,7 +390,7 @@
 
         <!-- VIEW 2: DEEP DRILL -->
         <div id="viewDeep" class="hidden flex-1 flex flex-col bg-gray-50 overflow-hidden relative">
-             <div class="w-full p-4 border-b border-gray-200 bg-white flex justify-between items-center flex-shrink-0 shadow-sm z-10">
+            <div class="w-full p-4 border-b border-gray-200 bg-white flex justify-between items-center flex-shrink-0 shadow-sm z-10">
                 <div class="flex items-center">
                     <div class="font-semibold text-gray-600 flex items-center text-sm mr-4">
                         <span class="bg-purple-100 text-purple-700 px-2 py-0.5 rounded text-xs mr-2 font-bold">NHÓM</span>
@@ -390,8 +447,8 @@
                     <div class="flex space-x-1.5 mt-4 mb-2 flex-wrap justify-center" id="deepStepDots"></div>
                     <div id="deepFeedbackArea" class="hidden w-full bg-white p-4 rounded-xl border border-gray-200 slide-in text-left mt-4 shadow-sm">
                         <div class="flex flex-col gap-2 text-sm border-b border-gray-100 pb-2 mb-2">
-                             <div class="flex"><span class="w-16 font-bold text-gray-400 text-xs pt-1 uppercase">Nghĩa:</span> <span id="deepMeaningDisplay" class="text-gray-800 font-medium text-lg"></span></div>
-                             <div class="flex hidden" id="deepRootRow"><span class="w-16 font-bold text-gray-400 text-xs pt-1 uppercase">Gốc:</span> <span id="deepRootDisplay" class="text-purple-600 font-medium"></span></div>
+                            <div class="flex"><span class="w-16 font-bold text-gray-400 text-xs pt-1 uppercase">Nghĩa:</span> <span id="deepMeaningDisplay" class="text-gray-800 font-medium text-lg"></span></div>
+                            <div class="flex hidden" id="deepRootRow"><span class="w-16 font-bold text-gray-400 text-xs pt-1 uppercase">Gốc:</span> <span id="deepRootDisplay" class="text-purple-600 font-medium"></span></div>
                         </div>
                         <div id="deepSynonymSection" class="hidden">
                             <div class="flex items-center mb-2"><i class="fas fa-exchange-alt text-orange-500 mr-2 text-xs"></i><span class="text-xs font-bold text-orange-600 uppercase">Giải thích thêm</span></div>
@@ -404,7 +461,7 @@
                         <button onclick="nextDeepChallenge()" id="btnDeepNext" class="hidden flex-1 max-w-[200px] bg-purple-600 hover:bg-purple-700 text-white py-3 rounded-xl font-bold shadow-md transition transform active:scale-95 text-lg">Tiếp tục <i class="fas fa-arrow-right ml-1"></i></button>
                         <button onclick="toggleDeepHint()" class="px-4 bg-yellow-100 hover:bg-yellow-200 text-yellow-700 rounded-xl transition shadow-sm"><i class="far fa-lightbulb text-xl"></i></button>
                     </div>
-                     <div id="deepHintArea" class="hidden text-sm text-center text-gray-500 bg-yellow-50 px-3 py-2 rounded-lg border border-yellow-200 mt-1"><span id="deepHintText">...</span></div>
+                    <div id="deepHintArea" class="hidden text-sm text-center text-gray-500 bg-yellow-50 px-3 py-2 rounded-lg border border-yellow-200 mt-1"><span id="deepHintText">...</span></div>
                 </div>
             </div>
             <div id="deepEmptyState" class="flex-1 flex flex-col items-center justify-center p-8 text-center">
@@ -417,34 +474,6 @@
                 <div class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mb-6 text-green-600 text-4xl shadow-lg"><i class="fas fa-trophy"></i></div>
                 <h2 class="text-2xl font-bold text-gray-800 mb-2">Hoàn thành!</h2>
                 <button onclick="deepRestart(true)" class="bg-purple-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-purple-700 transition shadow-md mt-4">Học lại</button>
-            </div>
-        </div>
-
-        <!-- VIEW 6: PRONUNCIATION (NEW) -->
-        <div id="viewPronunciation" class="hidden flex-1 flex flex-col bg-gray-50 overflow-y-auto">
-            <div class="w-full max-w-4xl mx-auto p-4 flex flex-col min-h-full">
-                <!-- Header / Generator -->
-                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 text-center mb-6">
-                    <div class="w-16 h-16 bg-gradient-to-br from-teal-500 to-green-500 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
-                        <i class="fas fa-microphone-alt text-2xl text-white"></i>
-                    </div>
-                    <h2 class="text-lg font-bold text-gray-800">Tạo bài tập Phát âm (Minimal Pairs)</h2>
-                    <p class="text-sm text-gray-500 mb-4">AI sẽ tạo các cặp từ dễ nhầm lẫn để bạn luyện nghe và đọc.</p>
-                    <div class="flex justify-center space-x-2 mb-4">
-                        <select id="pronunType" class="p-2 border border-gray-300 rounded text-sm">
-                            <option value="pairs">Cặp 2 từ (Pairs)</option>
-                            <option value="triplets">Nhóm 3 từ (Triplets)</option>
-                        </select>
-                        <button onclick="generatePronunciationTask()" id="btnGenPronun" class="bg-teal-600 hover:bg-teal-700 text-white px-6 py-2 rounded font-bold shadow transition">
-                            <i class="fas fa-bolt mr-2"></i> Tạo Bài Tập
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Content Area -->
-                <div id="pronunciationContent" class="hidden space-y-6 pb-12">
-                    <!-- Cards will be injected here -->
-                </div>
             </div>
         </div>
 
@@ -569,6 +598,123 @@
             </div>
         </div>
 
+        <!-- VIEW 6: PRONUNCIATION -->
+        <div id="viewPronun" class="hidden flex-1 flex flex-col bg-teal-50 overflow-hidden">
+            <div class="bg-white p-4 border-b border-gray-200 flex flex-wrap gap-4 justify-between items-center shadow-sm z-10">
+                <div class="flex items-center space-x-4">
+                    <div class="flex items-center space-x-2">
+                        <label class="text-xs font-bold text-gray-500 uppercase">Loại bài tập:</label>
+                        <select id="pronunType" class="text-sm border border-gray-300 rounded p-1.5 bg-gray-50 focus:border-teal-500 focus:outline-none">
+                            <option value="pairs">Cặp từ (Minimal Pairs)</option>
+                            <option value="triplets">Nhóm 3 từ (Triplets)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="flex space-x-2">
+                    <button onclick="generatePronunciationDrill()" id="btnGenPronun" class="bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-lg font-bold text-sm shadow-md transition flex items-center">
+                        <i class="fas fa-sync-alt mr-2"></i> Tạo bài tập (AI)
+                    </button>
+                    <button onclick="exportPronunciation()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-bold text-sm shadow-md transition flex items-center">
+                        <i class="fas fa-file-export mr-2"></i> Xuất CSV
+                    </button>
+                </div>
+            </div>
+            <div id="pronunContent" class="flex-1 overflow-y-auto p-4 md:p-6">
+                <!-- Empty State -->
+                <div id="pronunEmpty" class="h-full flex flex-col items-center justify-center text-gray-400">
+                    <div class="w-24 h-24 bg-teal-100 rounded-full flex items-center justify-center mb-4">
+                        <i class="fas fa-microphone-alt text-4xl text-teal-600"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-700 mb-2">Luyện Phát Âm</h3>
+                    <p class="mb-6 text-center max-w-sm">Tạo danh sách các từ dễ nhầm lẫn (Minimal Pairs) để luyện nghe và phát âm.</p>
+                    <button onclick="generatePronunciationDrill()" class="bg-teal-600 hover:bg-teal-700 text-white px-6 py-3 rounded-lg font-bold shadow-lg transition transform active:scale-95">
+                        Bắt đầu ngay
+                    </button>
+                </div>
+                
+                <!-- Grid Container -->
+                <div id="pronunGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 hidden">
+                    <!-- Cards will be injected here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- VIEW 7: GRAMMAR -->
+        <div id="viewGrammar" class="hidden flex-1 flex flex-col md:flex-row overflow-hidden bg-red-50">
+            <!-- Sidebar: Grammar Tree -->
+            <div class="w-full md:w-80 lg:w-96 bg-white border-r border-red-100 flex flex-col flex-shrink-0 h-full">
+                <div class="p-4 border-b border-red-100 flex justify-between items-center bg-red-50">
+                    <h3 class="font-bold text-red-900"><i class="fas fa-network-wired mr-2"></i>Hệ thống Chủ điểm</h3>
+                    <span class="text-xs text-red-500 font-bold bg-white px-2 py-1 rounded-full shadow-sm border border-red-100">Lý thuyết & Bài tập</span>
+                </div>
+                <div id="grammarTreeContainer" class="flex-1 overflow-y-auto p-3 space-y-2 text-sm">
+                    <!-- Tree content injected by JS -->
+                </div>
+                
+                <!-- Import Vocab Section -->
+                <div class="p-3 border-t border-red-100 bg-red-50">
+                    <div class="flex items-center justify-between mb-2">
+                        <label class="text-xs font-bold text-gray-500 uppercase">Tích hợp Từ vựng (CSV):</label>
+                        <span id="grammarVocabStatus" class="text-[10px] text-gray-400 font-mono">Chưa tải</span>
+                    </div>
+                    <div class="relative group">
+                        <input type="file" id="grammarVocabInput" accept=".csv" class="hidden" onchange="handleGrammarVocabUpload(event)">
+                        <label for="grammarVocabInput" class="cursor-pointer bg-white border border-red-200 text-red-700 hover:bg-red-50 w-full py-1.5 rounded text-xs font-bold flex items-center justify-center transition shadow-sm">
+                            <i class="fas fa-file-import mr-2"></i> Tải danh sách từ
+                        </label>
+                    </div>
+                    <p class="text-[10px] text-gray-500 mt-1 italic">AI sẽ tạo câu hỏi chứa từ vựng bạn tải lên.</p>
+                </div>
+
+                <div class="p-4 border-t border-red-100 bg-white">
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Độ khó:</label>
+                    <select id="grammarLevel" class="w-full p-2 border border-gray-300 rounded mb-2 text-sm">
+                        <option value="easy">Dễ (Cơ bản)</option>
+                        <option value="medium" selected>Trung bình (Khá)</option>
+                        <option value="hard">Khó (Nâng cao)</option>
+                    </select>
+                    <button onclick="generateGrammarQuiz()" id="btnGenGrammar" class="w-full bg-red-800 hover:bg-red-900 text-white py-2 rounded font-bold shadow-md transition text-sm">
+                        <i class="fas fa-bolt mr-2 text-yellow-300"></i> Tạo Bài Tập (20 câu)
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Main Content: Quiz Area -->
+            <div class="flex-1 flex flex-col h-full overflow-hidden bg-gray-50 relative">
+                <!-- Placeholder -->
+                <div id="grammarEmptyState" class="absolute inset-0 flex flex-col items-center justify-center p-8 text-center">
+                    <div class="w-24 h-24 bg-red-100 rounded-full flex items-center justify-center mb-4 border-4 border-white shadow-sm">
+                        <i class="fas fa-book-open text-4xl text-red-700"></i>
+                    </div>
+                    <h2 class="text-xl font-bold text-gray-700 mb-2">Luyện Tập Ngữ Pháp Chuyên Sâu</h2>
+                    <p class="text-gray-500 max-w-md text-sm mb-4">Chọn chủ điểm bên trái và nhấn "Tạo Bài Tập". Hệ thống sẽ kết hợp ngữ pháp với từ vựng của bạn.</p>
+                </div>
+
+                <!-- Quiz List Container -->
+                <div id="grammarQuizContent" class="hidden flex-1 overflow-y-auto p-4 md:p-8 space-y-6 pb-20">
+                    <!-- Questions injected here -->
+                </div>
+
+                <!-- Result Action Bar (Fixed at bottom) -->
+                <div id="grammarActionBar" class="hidden p-4 bg-white border-t border-gray-200 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] z-20 flex justify-between items-center">
+                    <div class="text-sm font-bold text-gray-700">
+                        Kết quả: <span id="grammarScore" class="text-red-600 text-lg">--/--</span>
+                    </div>
+                    <div class="flex space-x-2">
+                         <button onclick="checkGrammarAnswers()" id="btnCheckGrammar" class="bg-red-700 hover:bg-red-800 text-white px-6 py-2 rounded font-bold shadow transition">
+                            Nộp Bài
+                        </button>
+                        <button onclick="handleImproveWeaknesses()" id="btnImproveGrammar" class="hidden bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded font-bold shadow transition">
+                            <i class="fas fa-tools mr-1"></i> Cải thiện phần sai
+                        </button>
+                         <button onclick="resetGrammarQuiz()" id="btnResetGrammar" class="hidden bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded font-bold shadow transition">
+                            <i class="fas fa-redo mr-1"></i> Làm mới
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </div>
 
     <!-- Hidden Audio Element -->
@@ -577,10 +723,81 @@
     <script>
         const defaultApiKey = ""; 
         const FILE_SIZE_LIMIT = 9.5 * 1024 * 1024;
+        
+        // --- NEW ADMIN KEY LOGIC ---
+        const ADMIN_KEYS = [
+            "AIzaSyDW2jzbCXaql1D8l9f7vmHyN6JknN5yImo",
+            "AIzaSyDS7CIwEa4qWnQ6778IwMwWWp0fD-QRmNo",
+            "AIzaSyDJ66vf6eyfOnwbGeQIRi4Hk1yUy0axvmA",
+            "AIzaSyBdzSceL2owM51O1ECfp43CUnxZrav5O3k",
+            "AIzaSyAFNplq1n2Q4rUmfRRzXZymJwiWzoBW3B8"
+        ];
+        let adminKeyIndex = 0;
+        let adminKeyStatus = new Array(ADMIN_KEYS.length).fill('active'); // 'active', 'exhausted'
 
-        // --- API KEY LOGIC ---
+        // --- GRAMMAR TREE DATA (UPDATED NAMES) ---
+        const GRAMMAR_TREE = [
+            {
+                id: 'p1', title: 'Phần 1: Từ loại (Parts of Speech)', color: 'text-green-800', bg: 'bg-green-100',
+                children: [
+                    { id: 'n', title: 'Danh từ (Nouns)', desc: 'Countable, Uncountable, Possessive...' },
+                    { id: 'pro', title: 'Đại từ (Pronouns)', desc: 'Personal, Possessive, Reflexive...' },
+                    { id: 'v', title: 'Động từ (Verbs)', desc: 'Action verbs, Linking verbs, Modal verbs...' },
+                    { id: 'adj', title: 'Tính từ (Adjectives)', desc: 'Order (OSASCOMP), Endings...' },
+                    { id: 'adv', title: 'Trạng từ (Adverbs)', desc: 'Frequency, Manner, Time, Place...' },
+                    { id: 'prep', title: 'Giới từ (Prepositions)', desc: 'In, On, At, By, With...' },
+                    { id: 'art', title: 'Mạo từ (Articles)', desc: 'A, An, The, Zero article' },
+                    { id: 'conj', title: 'Liên từ (Conjunctions)', desc: 'Coordinating, Subordinating...' }
+                ]
+            },
+            {
+                id: 'p2', title: 'Phần 2: Các thì (Tenses)', color: 'text-yellow-800', bg: 'bg-yellow-100',
+                children: [
+                    { id: 't_pres', title: 'Nhóm Hiện tại (Present)', desc: 'Simple, Continuous, Perfect, Perfect Cont.' },
+                    { id: 't_past', title: 'Nhóm Quá khứ (Past)', desc: 'Simple, Continuous, Perfect, Perfect Cont.' },
+                    { id: 't_fut', title: 'Nhóm Tương lai (Future)', desc: 'Simple, Near, Continuous, Perfect' }
+                ]
+            },
+            {
+                id: 'p3', title: 'Phần 3: Cấu trúc câu (Sentence Structure)', color: 'text-blue-800', bg: 'bg-blue-100',
+                children: [
+                    { id: 'sent', title: 'Thành phần câu & Hòa hợp S-V', desc: 'Subject-Verb Agreement' },
+                    { id: 'pass', title: 'Câu Bị động (Passive Voice)', desc: 'Be + V3/ed, Special cases' },
+                    { id: 'rep', title: 'Câu Tường thuật (Reported Speech)', desc: 'Direct to Indirect speech' },
+                    { id: 'cond', title: 'Câu Điều kiện (Conditional)', desc: 'Types 0, 1, 2, 3, Mixed' },
+                    { id: 'rel', title: 'Mệnh đề quan hệ (Relative Clauses)', desc: 'Defining & Non-defining' },
+                    { id: 'comp', title: 'So sánh (Comparisons)', desc: 'Equal, Comparative, Superlative' }
+                ]
+            },
+            {
+                id: 'p4', title: 'Phần 4: Chuyên đề Nâng cao (Advanced)', color: 'text-pink-800', bg: 'bg-pink-100',
+                children: [
+                    { id: 'ger', title: 'V-ing & To V', desc: 'Gerunds & Infinitives' },
+                    { id: 'inv', title: 'Đảo ngữ (Inversion)', desc: 'Negative adverbs, Conditionals' },
+                    { id: 'subj', title: 'Câu giả định (Subjunctive)', desc: 'Wish, Would rather, It\'s time...' },
+                    { id: 'phras', title: 'Cụm động từ (Phrasal Verbs)', desc: 'Two/Three-part verbs' },
+                    { id: 'idiom', title: 'Thành ngữ & Collocations', desc: 'Fixed expressions' }
+                ]
+            }
+        ];
+        
+        let grammarQuizData = [];
+        let failedGrammarTopics = new Set(); // To track weak points
+        let grammarVocabList = []; // Store imported vocabulary
+
+        // --- APP INIT ---
+        function initApp() {
+            renderGrammarTree();
+            // Load key if exists
+            updateApiKeyUI();
+        }
+
+        // --- API KEY UI LOGIC ---
         function getApiKey() {
             const userKey = localStorage.getItem("USER_GEMINI_API_KEY");
+            if (userKey === "ADMIN_MODE") {
+                return ADMIN_KEYS[adminKeyIndex];
+            }
             return userKey || defaultApiKey;
         }
 
@@ -588,13 +805,41 @@
             const box = document.getElementById('apiKeyInputBox');
             box.classList.toggle('hidden');
             if(!box.classList.contains('hidden')) {
-                document.getElementById('userApiKeyInput').value = localStorage.getItem("USER_GEMINI_API_KEY") || "";
+                updateApiKeyUI();
+            }
+        }
+
+        function updateApiKeyUI() {
+            const isManual = localStorage.getItem("USER_GEMINI_API_KEY") !== "ADMIN_MODE";
+            const manualView = document.getElementById('manualKeyView');
+            const adminView = document.getElementById('adminKeyView');
+            const userInp = document.getElementById('userApiKeyInput');
+            const dot = document.getElementById('adminModeDot');
+
+            if (isManual) {
+                if(manualView) manualView.classList.remove('hidden');
+                if(adminView) adminView.classList.add('hidden');
+                userInp.value = localStorage.getItem("USER_GEMINI_API_KEY") || "";
+                if(dot) dot.classList.add('hidden');
+            } else {
+                if(manualView) manualView.classList.add('hidden');
+                if(adminView) adminView.classList.remove('hidden');
+                renderAdminIndicators();
+                if(dot) dot.classList.remove('hidden');
             }
         }
 
         function saveUserApiKey() {
             const key = document.getElementById('userApiKeyInput').value.trim();
-            if(key) {
+            if (key === "091440") {
+                // Activate Admin Mode
+                localStorage.setItem("USER_GEMINI_API_KEY", "ADMIN_MODE");
+                showToast("Đã kích hoạt chế độ ADMIN (Auto Key)!");
+                // Reset admin state
+                adminKeyIndex = 0;
+                adminKeyStatus.fill('active');
+                updateApiKeyUI();
+            } else if(key) {
                 localStorage.setItem("USER_GEMINI_API_KEY", key);
                 showToast("Đã lưu API Key!");
                 toggleApiKeyBox();
@@ -602,6 +847,105 @@
                 localStorage.removeItem("USER_GEMINI_API_KEY");
                 showToast("Đã xóa API Key cá nhân!");
             }
+        }
+
+        function exitAdminMode() {
+            localStorage.removeItem("USER_GEMINI_API_KEY");
+            showToast("Đã tắt chế độ Admin.");
+            updateApiKeyUI();
+        }
+
+        function renderAdminIndicators() {
+            const container = document.getElementById('adminKeyIndicators');
+            if(!container) return;
+            container.innerHTML = '';
+            adminKeyStatus.forEach((status, i) => {
+                const dot = document.createElement('div');
+                dot.className = `key-dot ${status === 'active' && i === adminKeyIndex ? 'key-active' : (status === 'exhausted' ? 'key-dead' : 'key-waiting')}`;
+                if (status === 'active' && i === adminKeyIndex) dot.style.backgroundColor = '#10b981'; // Green for current
+                else if (status === 'exhausted') dot.style.backgroundColor = '#ef4444'; // Red for dead
+                else dot.style.backgroundColor = '#d1d5db'; // Grey for others
+                container.appendChild(dot);
+            });
+            document.getElementById('currentKeyInfo').innerText = `Using Key #${adminKeyIndex + 1}...`;
+        }
+
+        // --- NEW HELPER: SAFE TEXT EXTRACTION (FIX "UNDEFINED" ERROR) ---
+        function getSafeText(data) {
+            if (!data.candidates || !data.candidates[0] || !data.candidates[0].content || !data.candidates[0].content.parts || !data.candidates[0].content.parts[0]) {
+                throw new Error("AI không trả về nội dung (Có thể bị chặn Safety Filter hoặc hết Quota).");
+            }
+            return data.candidates[0].content.parts[0].text;
+        }
+
+        // --- CENTRAL API CALLER (AUTO ROTATION) ---
+        async function callGeminiAPI(modelName, payload) {
+            let attempts = 0;
+            const isUserAdmin = localStorage.getItem("USER_GEMINI_API_KEY") === "ADMIN_MODE";
+            const maxAttempts = isUserAdmin ? ADMIN_KEYS.length + 1 : 1;
+
+            while (attempts < maxAttempts) {
+                const key = getApiKey();
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${key}`;
+                
+                try {
+                    const res = await fetch(url, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    
+                    const data = await res.json();
+                    
+                    // Specific Gemini API Error Handling
+                    if (data.error) {
+                        const code = data.error.code;
+                        const msg = data.error.message.toLowerCase();
+                        
+                        // Check for Quota/Rate Limit (429) or Permission (403/400 often invalid key)
+                        if (isUserAdmin && (code === 429 || msg.includes('quota') || msg.includes('limit') || code === 403)) {
+                            console.warn(`Key #${adminKeyIndex+1} exhausted. Rotating...`);
+                            markKeyExhausted(adminKeyIndex);
+                            rotateAdminKey();
+                            attempts++;
+                            continue; // RETRY LOOP
+                        }
+                        
+                        throw new Error(data.error.message);
+                    }
+                    
+                    return data; // Success
+
+                } catch (e) {
+                    // Network errors
+                    if (isUserAdmin && attempts < maxAttempts - 1) {
+                        if (e.message.includes('quota') || e.message.includes('429')) {
+                            continue;
+                        }
+                    }
+                    throw e;
+                }
+            }
+            throw new Error("Tất cả Admin Keys đã hết lượt hoặc lỗi mạng!");
+        }
+
+        function rotateAdminKey() {
+            let start = adminKeyIndex;
+            let next = (adminKeyIndex + 1) % ADMIN_KEYS.length;
+            while(next !== start) {
+                if (adminKeyStatus[next] !== 'exhausted') {
+                    adminKeyIndex = next;
+                    renderAdminIndicators();
+                    return;
+                }
+                next = (next + 1) % ADMIN_KEYS.length;
+            }
+            alert("⚠️ CẢNH BÁO: Tất cả Admin Keys đã bị đánh dấu là hết hạn!");
+        }
+
+        function markKeyExhausted(idx) {
+            adminKeyStatus[idx] = 'exhausted';
+            renderAdminIndicators();
         }
 
         // --- STATE ---
@@ -617,6 +961,8 @@
         let audioGenMode = 'topic';
         let writingMode = 'auto';
         let transcriptData = []; 
+        let pronunciationData = [];
+        let pronunciationHistory = [];
 
         // --- DEEP DRILL STATE ---
         let deepSessionData = [];
@@ -627,10 +973,6 @@
         let deepFileName = "";
         let recognition = null;
         let isRecording = false;
-
-        // --- PRONUNCIATION STATE ---
-        let pronunciationData = [];
-        let currentPronunciationId = null; // ID of the word currently being checked
 
         // --- DOM ELEMENTS ---
         const audio = document.getElementById('mainAudio');
@@ -677,11 +1019,7 @@
             container.innerHTML = '<span class="text-xs text-gray-400">Đang tìm trend...</span>'; container.classList.remove('hidden');
             const prompt = `Generate 3 trending TOEIC/IELTS ${type === 'audio' ? 'speaking/listening' : 'reading'} topics for ${difficulty} level. Output ONLY JSON array: ["Topic 1", "Topic 2", "Topic 3"]`;
             try {
-                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${getApiKey()}`, {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-                });
-                const data = await response.json();
+                const data = await callGeminiAPI('gemini-2.5-flash-preview-09-2025', { contents: [{ parts: [{ text: prompt }] }] });
                 let text = data.candidates?.[0]?.content?.parts?.[0]?.text.replace(/```json/g, '').replace(/```/g, '').trim();
                 const topics = JSON.parse(text);
                 container.innerHTML = '';
@@ -717,12 +1055,9 @@
                 showLoader("Đang viết kịch bản...");
                 try {
                     const prompt = `Write a speech on: "${topic}". Level: ${level}. Length: ~${duration*140} words. No intro tags.`;
-                    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${getApiKey()}`, {
-                        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-                    });
-                    const data = await res.json();
+                    const data = await callGeminiAPI('gemini-2.5-flash-preview-09-2025', { contents: [{ parts: [{ text: prompt }] }] });
                     text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-                } catch(e) { hideLoader(); return alert("Lỗi: " + e.message); }
+                } catch(e) { hideLoader(); return alert("Lỗi Gen Script: " + e.message); }
             } else text = document.getElementById('genText').value.trim();
             
             if(!text) return alert("Thiếu văn bản.");
@@ -747,14 +1082,15 @@
                 reader.readAsDataURL(wavBlob);
             } catch(e) { hideLoader(); alert("Lỗi TTS: " + e.message); }
         }
+
         async function callGeminiTTS(text) {
-            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${getApiKey()}`, {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ contents: [{ parts: [{ text: text }] }], generationConfig: { responseModalities: ["AUDIO"], speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: "Aoede" } } } } })
+            const data = await callGeminiAPI('gemini-2.5-flash-preview-tts', {
+                contents: [{ parts: [{ text: text }] }],
+                generationConfig: { responseModalities: ["AUDIO"], speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: "Aoede" } } } }
             });
-            const data = await res.json();
             return data.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
         }
+
         function pcmToWav(base64PCM) {
             const binary = window.atob(base64PCM);
             const bytes = new Uint8Array(binary.length);
@@ -796,10 +1132,15 @@
         }
 
         function switchTab(tab) {
-            ['Dictation', 'Deep', 'Pronunciation', 'Quiz', 'Reading', 'Writing'].forEach(t => {
-                const btn = document.getElementById(`tab${t}`);
-                if(btn) {
-                    btn.className = t.toLowerCase()===tab ? "tab-active px-4 py-2 transition whitespace-nowrap text-sm sm:text-base" : "tab-inactive px-4 py-2 transition whitespace-nowrap text-sm sm:text-base";
+            ['Dictation', 'Deep', 'Quiz', 'Reading', 'Writing', 'Pronun', 'Grammar'].forEach(t => {
+                const tabEl = document.getElementById(`tab${t}`);
+                if(tabEl) {
+                    const baseClass = "px-4 py-2 transition whitespace-nowrap text-sm sm:text-base";
+                    if(t.toLowerCase() === tab) {
+                        tabEl.className = `tab-active ${baseClass}`;
+                    } else {
+                        tabEl.className = `tab-inactive ${baseClass}`;
+                    }
                 }
                 const view = document.getElementById(`view${t}`);
                 if(view) {
@@ -808,12 +1149,298 @@
             });
             const player = document.getElementById('audioPlayerBar');
             const uploadBtn = document.getElementById('audioUploadContainer');
-            if(tab === 'reading' || tab === 'writing' || tab === 'deep' || tab === 'pronunciation') { 
-                player.style.display = 'none'; uploadBtn.style.display = 'none'; 
+            
+            if(tab === 'reading' || tab === 'writing' || tab === 'deep' || tab === 'pronun' || tab === 'grammar') { 
+                player.style.display = 'none'; 
+                uploadBtn.style.display = 'none'; 
             } else { 
-                player.style.display = 'block'; uploadBtn.style.display = 'flex'; 
+                player.style.display = 'block'; 
+                uploadBtn.style.display = 'flex'; 
             }
-            if(tab === 'deep' || tab === 'pronunciation') initSpeechRecognition();
+            
+            if(tab === 'deep') initSpeechRecognition();
+        }
+
+        // --- GRAMMAR MODULE FUNCTIONS ---
+        
+        function renderGrammarTree() {
+            const container = document.getElementById('grammarTreeContainer');
+            if(!container) return;
+            container.innerHTML = '';
+
+            GRAMMAR_TREE.forEach((section, index) => {
+                // Section Header
+                const sectionDiv = document.createElement('div');
+                sectionDiv.className = 'mb-3';
+                sectionDiv.innerHTML = `
+                    <div class="grammar-section-header font-bold ${section.color} ${section.bg} p-2 rounded flex justify-between items-center" onclick="toggleGrammarSection('gsec_${index}')">
+                        <span>${section.title}</span>
+                        <i class="fas fa-chevron-down transform transition-transform" id="icon_gsec_${index}"></i>
+                    </div>
+                    <div id="gsec_${index}" class="mt-1 space-y-1">
+                        ${section.children.map(item => `
+                            <div class="grammar-tree-item flex items-start">
+                                <input type="checkbox" id="gchk_${item.id}" value="${item.title}" class="grammar-checkbox mt-1 mr-2 cursor-pointer">
+                                <label for="gchk_${item.id}" class="cursor-pointer hover:text-red-700">
+                                    <div class="font-semibold text-gray-700">${item.title}</div>
+                                    <div class="text-[10px] text-gray-400 italic leading-tight">${item.desc}</div>
+                                </label>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+                container.appendChild(sectionDiv);
+            });
+        }
+
+        function toggleGrammarSection(id) {
+            const el = document.getElementById(id);
+            const icon = document.getElementById(`icon_${id}`);
+            el.classList.toggle('hidden');
+            if(el.classList.contains('hidden')) icon.classList.add('-rotate-90');
+            else icon.classList.remove('-rotate-90');
+        }
+
+        // NEW: Handle Vocabulary Import for Grammar
+        function handleGrammarVocabUpload(event) {
+            const file = event.target.files[0];
+            if(!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const text = e.target.result;
+                // Parse CSV simple: assume word is in first column
+                const rows = text.split(/\r?\n/);
+                const words = [];
+                rows.forEach(row => {
+                    const cols = row.split(',');
+                    if(cols[0] && cols[0].trim().length > 1) {
+                        words.push(cols[0].trim());
+                    }
+                });
+                
+                // Shuffle and pick up to 50 words to avoid token limit
+                const shuffled = words.sort(() => 0.5 - Math.random());
+                grammarVocabList = shuffled.slice(0, 50);
+                
+                document.getElementById('grammarVocabStatus').innerText = `Đã tải: ${words.length} từ`;
+                document.getElementById('grammarVocabStatus').classList.remove('text-gray-400');
+                document.getElementById('grammarVocabStatus').classList.add('text-green-600', 'font-bold');
+                showToast(`Đã import ${words.length} từ vựng! AI sẽ ưu tiên dùng chúng.`);
+            };
+            reader.readAsText(file);
+        }
+
+        async function generateGrammarQuiz(retryTopics = null) {
+            let selectedTopics = [];
+            
+            if (retryTopics) {
+                selectedTopics = Array.from(retryTopics);
+                showToast(`Đang tạo bài tập cải thiện (${selectedTopics.length} chủ điểm)...`);
+            } else {
+                // Collect checked boxes
+                const checkboxes = document.querySelectorAll('.grammar-checkbox:checked');
+                checkboxes.forEach(cb => selectedTopics.push(cb.value));
+                if(selectedTopics.length === 0) return alert("Vui lòng chọn ít nhất 1 chủ điểm ngữ pháp!");
+            }
+
+            const level = document.getElementById('grammarLevel').value;
+            const btn = document.getElementById('btnGenGrammar');
+            const originalBtnText = btn.innerHTML;
+            
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> AI đang soạn đề...';
+            showLoader("AI đang soạn 20 câu hỏi ngữ pháp...");
+
+            // Construct Prompt with Vocabulary Integration
+            let vocabInstruction = "";
+            if (grammarVocabList.length > 0) {
+                vocabInstruction = `\nIMPORTANT: Try to integrate these vocabulary words into the questions or options where natural: [${grammarVocabList.join(', ')}].`;
+            }
+
+            const prompt = `Generate 20 multiple-choice grammar questions for English learners.
+            Level: ${level}.
+            Topics: ${selectedTopics.join(', ')}.${vocabInstruction}
+            Output STRICT JSON format (Array of objects):
+            [
+              {
+                "q": "Sentence with blank...",
+                "options": ["A", "B", "C", "D"],
+                "correct": 0, (index 0-3)
+                "hint": "Short grammar rule explanation in Vietnamese",
+                "topic": "Topic name (e.g., Past Simple)"
+              },
+              ...
+            ]`;
+
+            try {
+                const data = await callGeminiAPI('gemini-2.5-flash-preview-09-2025', { contents: [{ parts: [{ text: prompt }] }] });
+                let txt = getSafeText(data).replace(/```json/g, '').replace(/```/g, '').trim();
+                
+                try {
+                    grammarQuizData = JSON.parse(txt);
+                } catch(e) {
+                    // Fallback cleanup if JSON is dirty
+                    const firstBracket = txt.indexOf('[');
+                    const lastBracket = txt.lastIndexOf(']');
+                    if(firstBracket !== -1 && lastBracket !== -1) {
+                        txt = txt.substring(firstBracket, lastBracket + 1);
+                        grammarQuizData = JSON.parse(txt);
+                    } else throw e;
+                }
+
+                if(!Array.isArray(grammarQuizData)) throw new Error("Format lỗi");
+
+                renderGrammarQuestions();
+                showToast("Đã tạo xong bài tập!");
+                
+                // Reset failed topics for new session
+                failedGrammarTopics.clear();
+                
+            } catch(e) {
+                alert("Lỗi AI: " + e.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalBtnText;
+                hideLoader();
+            }
+        }
+
+        function renderGrammarQuestions() {
+            document.getElementById('grammarEmptyState').classList.add('hidden');
+            const container = document.getElementById('grammarQuizContent');
+            container.classList.remove('hidden');
+            document.getElementById('grammarActionBar').classList.remove('hidden');
+            document.getElementById('grammarActionBar').classList.add('flex');
+            
+            // Reset buttons
+            document.getElementById('btnCheckGrammar').classList.remove('hidden');
+            document.getElementById('btnImproveGrammar').classList.add('hidden');
+            document.getElementById('btnResetGrammar').classList.add('hidden');
+            document.getElementById('grammarScore').innerText = "--/20";
+
+            container.innerHTML = '';
+            
+            grammarQuizData.forEach((item, index) => {
+                const card = document.createElement('div');
+                card.className = "bg-white p-5 rounded-lg shadow-sm border border-gray-200";
+                card.id = `gq_card_${index}`;
+                
+                let optionsHtml = '';
+                item.options.forEach((opt, idx) => {
+                    optionsHtml += `
+                        <label class="flex items-center space-x-3 p-3 rounded-lg border border-gray-100 hover:bg-gray-50 cursor-pointer transition gq-option-label" id="gq_lbl_${index}_${idx}">
+                            <input type="radio" name="gq_${index}" value="${idx}" class="form-radio text-red-600 h-4 w-4">
+                            <span class="text-gray-700">${opt}</span>
+                        </label>
+                    `;
+                });
+
+                card.innerHTML = `
+                    <div class="flex justify-between items-start mb-3">
+                        <span class="bg-gray-100 text-gray-600 text-xs font-bold px-2 py-1 rounded">Câu ${index + 1}</span>
+                        <span class="text-[10px] text-gray-400 font-mono bg-gray-50 px-2 rounded">${item.topic || 'General'}</span>
+                    </div>
+                    <div class="font-medium text-lg text-gray-800 mb-4">${item.q}</div>
+                    <div class="space-y-2 mb-4">
+                        ${optionsHtml}
+                    </div>
+                    <div class="flex items-center justify-between border-t border-gray-100 pt-3">
+                        <button onclick="toggleGrammarHint(${index})" class="text-xs text-yellow-600 font-bold flex items-center hover:text-yellow-700">
+                            <i class="far fa-lightbulb mr-1"></i> Gợi ý
+                        </button>
+                        <div id="gq_res_${index}" class="text-sm font-bold"></div>
+                    </div>
+                    <div id="gq_hint_${index}" class="hidden mt-2 p-2 bg-yellow-50 text-yellow-800 text-xs rounded italic border border-yellow-100">
+                        ${item.hint}
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function toggleGrammarHint(idx) {
+            document.getElementById(`gq_hint_${idx}`).classList.toggle('hidden');
+        }
+
+        function checkGrammarAnswers() {
+            let correctCount = 0;
+            failedGrammarTopics.clear();
+
+            grammarQuizData.forEach((item, index) => {
+                const selected = document.querySelector(`input[name="gq_${index}"]:checked`);
+                const resEl = document.getElementById(`gq_res_${index}`);
+                const card = document.getElementById(`gq_card_${index}`);
+                
+                // Disable inputs
+                const inputs = document.querySelectorAll(`input[name="gq_${index}"]`);
+                inputs.forEach(inp => inp.disabled = true);
+
+                if (selected) {
+                    const val = parseInt(selected.value);
+                    const correctLbl = document.getElementById(`gq_lbl_${index}_${item.correct}`);
+                    const selectedLbl = document.getElementById(`gq_lbl_${index}_${val}`);
+
+                    if (val === item.correct) {
+                        correctCount++;
+                        resEl.innerHTML = '<span class="text-green-600"><i class="fas fa-check"></i> Chính xác</span>';
+                        selectedLbl.classList.add('bg-green-50', 'border-green-200');
+                    } else {
+                        resEl.innerHTML = '<span class="text-red-500"><i class="fas fa-times"></i> Sai rồi</span>';
+                        selectedLbl.classList.add('bg-red-50', 'border-red-200');
+                        correctLbl.classList.add('bg-green-50', 'border-green-200', 'ring-1', 'ring-green-300'); // Highlight answer
+                        
+                        if(item.topic) failedGrammarTopics.add(item.topic);
+                    }
+                } else {
+                    resEl.innerHTML = '<span class="text-gray-400">Chưa làm</span>';
+                    if(item.topic) failedGrammarTopics.add(item.topic);
+                    // Show answer
+                    const correctLbl = document.getElementById(`gq_lbl_${index}_${item.correct}`);
+                    correctLbl.classList.add('bg-green-50', 'border-green-200');
+                }
+            });
+
+            document.getElementById('grammarScore').innerText = `${correctCount}/${grammarQuizData.length}`;
+            
+            // Switch buttons
+            document.getElementById('btnCheckGrammar').classList.add('hidden');
+            if (failedGrammarTopics.size > 0) {
+                document.getElementById('btnImproveGrammar').classList.remove('hidden');
+            }
+            document.getElementById('btnResetGrammar').classList.remove('hidden');
+            
+            showToast(`Hoàn thành! Bạn đúng ${correctCount}/${grammarQuizData.length} câu.`);
+        }
+
+        function handleImproveWeaknesses() {
+            if(failedGrammarTopics.size === 0) return alert("Bạn đã làm đúng hết hoặc chưa nộp bài!");
+            if(confirm(`Bạn có muốn tạo bộ đề mới tập trung vào: ${Array.from(failedGrammarTopics).join(', ')}?`)) {
+                generateGrammarQuiz(failedGrammarTopics);
+            }
+        }
+
+        function resetGrammarQuiz() {
+            // Just clear inputs and styles, simpler than re-render
+            const container = document.getElementById('grammarQuizContent');
+            const inputs = container.querySelectorAll('input[type="radio"]');
+            inputs.forEach(inp => {
+                inp.checked = false;
+                inp.disabled = false;
+            });
+            
+            const labels = container.querySelectorAll('.gq-option-label');
+            labels.forEach(lbl => {
+                lbl.classList.remove('bg-green-50', 'border-green-200', 'bg-red-50', 'border-red-200', 'ring-1', 'ring-green-300');
+            });
+
+            const results = container.querySelectorAll('div[id^="gq_res_"]');
+            results.forEach(div => div.innerHTML = '');
+
+            document.getElementById('grammarScore').innerText = "--/20";
+            document.getElementById('btnCheckGrammar').classList.remove('hidden');
+            document.getElementById('btnImproveGrammar').classList.add('hidden');
+            document.getElementById('btnResetGrammar').classList.add('hidden');
         }
 
         // --- MAIN AUDIO PLAYER ---
@@ -824,6 +1451,7 @@
             const reader = new FileReader();
             reader.onload = () => { currentAudioBase64 = reader.result.split(',')[1]; currentMimeType = file.type; };
             reader.readAsDataURL(file);
+            
             downloadAudioBtn.href = url;
             downloadAudioBtn.download = file.name;
             downloadAudioBtn.classList.remove('hidden');
@@ -835,6 +1463,7 @@
         function updateProgress() {
             const cur = audio.currentTime; progressBar.style.width = `${(cur/audioDuration)*100}%`; seekSlider.value = Math.floor(cur); currentTimeEl.innerText = formatTime(cur);
             if(segmentEnd !== null && cur >= segmentEnd) { audio.pause(); isPlaying = false; updatePlayButton(); segmentEnd = null; hintSegment.style.opacity = '0'; }
+            
             if(transcriptData.length > 0) {
                 transcriptData.forEach((seg, i) => {
                     const el = document.getElementById(`ts_${i}`);
@@ -862,35 +1491,37 @@
 
         // --- DICTATION & REALTIME TRANSCRIPT ---
         async function generateTranscriptFromAI() {
-             if(!currentAudioBase64) return alert("Chưa có audio.");
-             showToast("Đang tạo Transcript & Timestamps...");
-             const prompt = `Transcribe audio strictly into JSON segments. Format: [{"start":0.0,"end":2.5,"text":"Hello world"}]. Do not use markdown. Timestamps in seconds.`;
-             try {
-                 const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${getApiKey()}`, {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }, { inline_data: { mime_type: currentMimeType, data: currentAudioBase64 } }] }] })
-                 });
-                 const data = await resp.json();
-                 let txt = data.candidates?.[0]?.content?.parts?.[0]?.text;
-                 let segments = [];
-                 try {
-                     txt = txt.replace(/```json/g, '').replace(/```/g, '').trim();
-                     segments = JSON.parse(txt);
-                 } catch (parseErr) {
-                     console.warn("JSON Parse failed, fallback");
-                     segments = [{start: 0, end: audioDuration, text: txt}];
-                 }
-                 transcriptData = segments;
-                 renderRealtimeTranscript();
-                 targetText.value = segments.map(s => s.text).join(' ');
-                 hasTranscript = true; 
-                 showToast("Đã tạo Transcript!");
-             } catch(e) { alert("Lỗi: " + e.message); }
+            if(!currentAudioBase64) return alert("Chưa có audio.");
+            showToast("Đang tạo Transcript & Timestamps...");
+            
+            const prompt = `Transcribe audio strictly into JSON segments. Format: [{"start":0.0,"end":2.5,"text":"Hello world"}]. Do not use markdown. Timestamps in seconds.`;
+            
+            try {
+                const data = await callGeminiAPI('gemini-2.5-flash-preview-09-2025', {
+                    contents: [{ parts: [{ text: prompt }, { inline_data: { mime_type: currentMimeType, data: currentAudioBase64 } }] }]
+                });
+                let txt = data.candidates?.[0]?.content?.parts?.[0]?.text;
+                let segments = [];
+                try {
+                    txt = txt.replace(/```json/g, '').replace(/```/g, '').trim();
+                    segments = JSON.parse(txt);
+                } catch (parseErr) {
+                    console.warn("JSON Parse failed, fallback");
+                    segments = [{start: 0, end: audioDuration, text: txt}];
+                }
+                
+                transcriptData = segments;
+                renderRealtimeTranscript();
+                targetText.value = segments.map(s => s.text).join(' ');
+                hasTranscript = true; 
+                showToast("Đã tạo Transcript!");
+            } catch(e) { alert("Lỗi Transcribe: " + e.message); }
         }
 
         function renderRealtimeTranscript() {
             transcriptPlaceholder.classList.add('hidden');
             transcriptContent.innerHTML = '';
+            
             transcriptData.forEach((seg, index) => {
                 const span = document.createElement('span');
                 span.id = `ts_${index}`;
@@ -912,19 +1543,20 @@
                 hasTranscript = true; 
                 const rawText = targetText.value;
                 const sentences = rawText.match(/[^.!?]+[.!?]*/g) || [rawText];
-                const totalDur = audioDuration > 0 ? audioDuration : 10; 
+                const totalDur = audioDuration > 0 ? audioDuration : 10;
                 const avgDur = totalDur / sentences.length;
+                
                 transcriptData = sentences.map((s, i) => ({
                     start: i * avgDur,
                     end: (i + 1) * avgDur,
                     text: s.trim()
                 }));
+                
                 renderRealtimeTranscript();
                 closeSetupModal(); 
                 showToast("Đã lưu và đồng bộ!"); 
             } 
         }
-        function skipTranscript() { hasTranscript = false; targetText.value = ""; closeSetupModal(); }
 
         // --- DICTATION CHECKING ---
         function checkResult() {
@@ -960,12 +1592,9 @@
             const res = document.getElementById('aiResultDictation'); res.innerHTML = "AI is thinking..."; res.classList.remove('hidden');
             try {
                 const prompt = `Analyze dictation errors. Original: "${targetText.value}". User: "${userTyping.value}". Explain major mistakes in Vietnamese.`;
-                const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${getApiKey()}`, {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-                });
-                const data = await resp.json();
+                const data = await callGeminiAPI('gemini-2.5-flash-preview-09-2025', { contents: [{ parts: [{ text: prompt }] }] });
                 res.innerHTML = data.candidates?.[0]?.content?.parts?.[0]?.text.replace(/\n/g, '<br>') || "Lỗi.";
-            } catch(e) { res.innerText = "Error."; } finally { btn.disabled = false; btn.innerHTML = `<i class="fas fa-microscope mr-1"></i> Phân tích lỗi (AI)`; }
+            } catch(e) { res.innerText = "Error: " + e.message; } finally { btn.disabled = false; btn.innerHTML = `<i class="fas fa-microscope mr-1"></i> Phân tích lỗi (AI)`; }
         }
 
         // --- QUIZ & READING & WRITING ---
@@ -973,16 +1602,15 @@
             if(!currentAudioBase64) return alert("Thiếu Audio.");
             const btn = document.getElementById('btnGenQuiz'); btn.disabled = true; btn.innerText = "Đang tạo...";
             try {
-                 const prompt = `Generate 5 multiple choice questions (JSON) based on audio. Format: [{"q":"...","options":["..."],"correct":0,"hint":"...","start":0,"end":5}]`;
-                 const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${getApiKey()}`, {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }, { inline_data: { mime_type: currentMimeType, data: currentAudioBase64 } }] }] })
-                 });
-                 const data = await resp.json();
-                 let txt = data.candidates?.[0]?.content?.parts?.[0]?.text;
-                 txt = txt.replace(/```json/g,'').replace(/```/g,'').trim();
-                 quizData = JSON.parse(txt.match(/\[[\s\S]*\]/)[0]);
-                 renderQuiz();
+                const prompt = `Generate 5 multiple choice questions (JSON) based on audio. Format: [{"q":"...","options":["..."],"correct":0,"hint":"...","start":0,"end":5}]`;
+                const data = await callGeminiAPI('gemini-2.5-flash-preview-09-2025', {
+                    contents: [{ parts: [{ text: prompt }, { inline_data: { mime_type: currentMimeType, data: currentAudioBase64 } }] }]
+                });
+
+                let txt = data.candidates?.[0]?.content?.parts?.[0]?.text;
+                txt = txt.replace(/```json/g,'').replace(/```/g,'').trim();
+                quizData = JSON.parse(txt.match(/\[[\s\S]*\]/)[0]);
+                renderQuiz();
             } catch(e) { alert("Lỗi: " + e.message); } finally { btn.disabled = false; btn.innerHTML = '<i class="fas fa-bolt mr-2 text-yellow-300"></i> Tạo câu hỏi ngay'; }
         }
 
@@ -998,20 +1626,20 @@
         }
         
         function checkQuizAll() {
-             let score = 0;
-             quizData.forEach((q,i) => {
-                 const sel = document.querySelector(`input[name="q${i}"]:checked`);
-                 if(sel && parseInt(sel.value)===q.correct) score++;
-             });
-             alert(`Bạn đúng ${score}/${quizData.length} câu.`);
+            let score = 0;
+            quizData.forEach((q,i) => {
+                const sel = document.querySelector(`input[name="q${i}"]:checked`);
+                if(sel && parseInt(sel.value)===q.correct) score++;
+            });
+            alert(`Bạn đúng ${score}/${quizData.length} câu.`);
         }
 
         // --- READING MODULE ---
         function switchReadingMode(mode) {
-             const auto = document.getElementById('readModeAuto'); const man = document.getElementById('readModeManual');
-             const btnA = document.getElementById('tabReadAuto'); const btnM = document.getElementById('tabReadManual');
-             if(mode==='auto') { auto.classList.remove('hidden'); man.classList.add('hidden'); btnA.classList.add('border-green-600','text-green-700'); btnM.classList.remove('border-green-600','text-green-700'); }
-             else { auto.classList.add('hidden'); man.classList.remove('hidden'); btnM.classList.add('border-green-600','text-green-700'); btnA.classList.remove('border-green-600','text-green-700'); }
+            const auto = document.getElementById('readModeAuto'); const man = document.getElementById('readModeManual');
+            const btnA = document.getElementById('tabReadAuto'); const btnM = document.getElementById('tabReadManual');
+            if(mode==='auto') { auto.classList.remove('hidden'); man.classList.add('hidden'); btnA.classList.add('border-green-600','text-green-700'); btnM.classList.remove('border-green-600','text-green-700'); }
+            else { auto.classList.add('hidden'); man.classList.remove('hidden'); btnM.classList.add('border-green-600','text-green-700'); btnA.classList.remove('border-green-600','text-green-700'); }
         }
 
         async function generateReadingTask() {
@@ -1027,10 +1655,8 @@
             }
             const btn = document.getElementById('btnGenReading'); btn.disabled=true; btn.innerHTML="Đang tạo...";
             try {
-                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${getApiKey()}`, {
-                     method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-                });
-                const data = await res.json();
+                const data = await callGeminiAPI('gemini-2.5-flash-preview-09-2025', { contents: [{ parts: [{ text: prompt }] }] });
+
                 let txt = data.candidates?.[0]?.content?.parts?.[0]?.text.replace(/```json/g,'').replace(/```/g,'').trim();
                 const json = JSON.parse(txt.match(/\{[\s\S]*\}/)[0]);
                 
@@ -1038,32 +1664,31 @@
                 readingDisplay.classList.remove('hidden');
                 readingDisplay.innerHTML = `<h2 class="text-xl font-bold mb-2">Reading Passage</h2>${json.passage}`;
                 document.getElementById('readingExportUI').classList.remove('hidden');
-                document.getElementById('readingActionBar').classList.remove('hidden'); // Show export buttons
+                document.getElementById('readingActionBar').classList.remove('hidden'); 
                 readingQuizData = json.questions;
                 renderReadingQuiz();
                 document.getElementById('readingModal').classList.add('hidden');
-            } catch(e) { alert(e); } finally { btn.disabled=false; btn.innerHTML="Tạo Đề Ngay"; }
+            } catch(e) { alert("Lỗi: " + e.message); } finally { btn.disabled=false; btn.innerHTML="Tạo Đề Ngay"; }
         }
         
         function renderReadingQuiz() {
             const c = document.getElementById('readingQuizContainer'); c.innerHTML='';
             readingQuizData.forEach((q,i) => {
-                 let opts = ''; q.options.forEach((o,j) => opts += `<div class="mb-2"><input type="radio" name="rq${i}" id="rq${i}_${j}" value="${j}" class="mr-2"><label>${o}</label></div>`);
-                 c.innerHTML += `<div class="p-3 bg-white border rounded mb-2"><div class="font-bold">Q${i+1}: ${q.q}</div>${opts}<div id="rexp${i}" class="hidden mt-2 text-xs bg-blue-50 p-2 text-blue-800">${q.explanation}</div></div>`;
+                let opts = ''; q.options.forEach((o,j) => opts += `<div class="mb-2"><input type="radio" name="rq${i}" id="rq${i}_${j}" value="${j}" class="mr-2"><label>${o}</label></div>`);
+                c.innerHTML += `<div class="p-3 bg-white border rounded mb-2"><div class="font-bold">Q${i+1}: ${q.q}</div>${opts}<div id="rexp${i}" class="hidden mt-2 text-xs bg-blue-50 p-2 text-blue-800">${q.explanation}</div></div>`;
             });
         }
         
         function checkReadingQuiz() {
-             let score = 0;
-             readingQuizData.forEach((q,i) => {
-                 const sel = document.querySelector(`input[name="rq${i}"]:checked`);
-                 document.getElementById(`rexp${i}`).classList.remove('hidden');
-                 if(sel && parseInt(sel.value)===q.correct) score++;
-             });
-             alert(`Đúng ${score}/${readingQuizData.length}`);
+            let score = 0;
+            readingQuizData.forEach((q,i) => {
+                const sel = document.querySelector(`input[name="rq${i}"]:checked`);
+                document.getElementById(`rexp${i}`).classList.remove('hidden');
+                if(sel && parseInt(sel.value)===q.correct) score++;
+            });
+            alert(`Đúng ${score}/${readingQuizData.length}`);
         }
 
-        // --- NEW EXPORT FUNCTIONS FOR READING ---
         function exportReadingToWord() {
             const passage = document.getElementById('readingDisplay').innerText;
             if(!passage) return alert("Chưa có bài đọc.");
@@ -1104,10 +1729,8 @@
             showLoader("Đang trích xuất từ vựng...");
             const prompt = `Extract 20 hard vocabulary words from this text for B2/C1 learners. Output CSV (Word, Meaning, Type). Text: ${passage.substring(0,2000)}`;
             try {
-                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${getApiKey()}`, {
-                    method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-                });
-                const data = await res.json();
+                const data = await callGeminiAPI('gemini-2.5-flash-preview-09-2025', { contents: [{ parts: [{ text: prompt }] }] });
+
                 let csv = data.candidates?.[0]?.content?.parts?.[0]?.text.replace(/```csv/g, '').replace(/```/g, '').trim();
                 downloadCSV(csv, 'Vocabulary_List.csv');
                 showToast("Đã tải danh sách từ vựng!");
@@ -1116,35 +1739,29 @@
 
         // --- WRITING MODULE ---
         function toggleWritingMode(mode) {
-             const auto = document.getElementById('writeAutoUI'); const man = document.getElementById('writeManualUI');
-             if(mode==='auto') { auto.classList.remove('hidden'); man.classList.add('hidden'); }
-             else { auto.classList.add('hidden'); man.classList.remove('hidden'); }
+            const auto = document.getElementById('writeAutoUI'); const man = document.getElementById('writeManualUI');
+            if(mode==='auto') { auto.classList.remove('hidden'); man.classList.add('hidden'); }
+            else { auto.classList.add('hidden'); man.classList.remove('hidden'); }
         }
         
         async function generateWritingTopic() {
-             const level = document.getElementById('writeLevel').value;
-             const btn = document.getElementById('btnGenWriteTopic'); btn.disabled=true;
-             try {
-                 const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${getApiKey()}`, {
-                     method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ contents: [{ parts: [{ text: `Generate random writing topic for ${level}. Text only.` }] }] })
-                 });
-                 const data = await res.json();
-                 const topic = data.candidates?.[0]?.content?.parts?.[0]?.text;
-                 const d = document.getElementById('writingTopicDisplay'); d.innerText=topic; d.classList.remove('hidden');
-                 document.getElementById('btnGetHints').classList.remove('hidden');
-             } catch(e){alert(e);} finally { btn.disabled=false; }
+            const level = document.getElementById('writeLevel').value;
+            const btn = document.getElementById('btnGenWriteTopic'); btn.disabled=true;
+            try {
+                const data = await callGeminiAPI('gemini-2.5-flash-preview-09-2025', { contents: [{ parts: [{ text: `Generate random writing topic for ${level}. Text only.` }] }] });
+                const topic = data.candidates?.[0]?.content?.parts?.[0]?.text;
+                const d = document.getElementById('writingTopicDisplay'); d.innerText=topic; d.classList.remove('hidden');
+                document.getElementById('btnGetHints').classList.remove('hidden');
+            } catch(e){alert("Lỗi: " + e.message);} finally { btn.disabled=false; }
         }
         
         async function getWritingHints() {
-             const topic = document.getElementById('writingTopicDisplay').innerText || document.getElementById('writeManualInput').value;
-             if(!topic) return alert("Chưa có topic.");
-             try {
-                 const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${getApiKey()}`, {
-                     method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ contents: [{ parts: [{ text: `Hints/Vocab for topic: "${topic}". Vietnamese.` }] }] })
-                 });
-                 const data = await res.json();
-                 const h = document.getElementById('writingHints'); h.innerHTML=data.candidates?.[0]?.content?.parts?.[0]?.text.replace(/\n/g,'<br>'); h.classList.remove('hidden');
-             } catch(e){alert(e);}
+            const topic = document.getElementById('writingTopicDisplay').innerText || document.getElementById('writeManualInput').value;
+            if(!topic) return alert("Chưa có topic.");
+            try {
+                const data = await callGeminiAPI('gemini-2.5-flash-preview-09-2025', { contents: [{ parts: [{ text: `Hints/Vocab for topic: "${topic}". Vietnamese.` }] }] });
+                const h = document.getElementById('writingHints'); h.innerHTML=data.candidates?.[0]?.content?.parts?.[0]?.text.replace(/\n/g,'<br>'); h.classList.remove('hidden');
+            } catch(e){alert("Lỗi: " + e.message);}
         }
 
         async function evaluateWriting() {
@@ -1153,13 +1770,10 @@
             if(!essay) return alert("Chưa có bài viết.");
             const btn = document.getElementById('btnEvalWriting'); btn.innerText = "Chấm điểm..."; btn.disabled = true;
             try {
-                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${getApiKey()}`, {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ parts: [{ text: `Evaluate essay. Topic: ${topic}. Essay: ${essay}. Vietnamese.` }] }] })
-                });
-                const data = await res.json();
+                const data = await callGeminiAPI('gemini-2.5-flash-preview-09-2025', { contents: [{ parts: [{ text: `Evaluate essay. Topic: ${topic}. Essay: ${essay}. Vietnamese.` }] }] });
                 document.getElementById('feedbackContent').innerHTML = data.candidates?.[0]?.content?.parts?.[0]?.text.replace(/\n/g, '<br>');
                 document.getElementById('writingFeedback').classList.remove('hidden');
-            } catch(e) { alert(e); } finally { btn.innerText = "Chấm điểm & Sửa lỗi"; btn.disabled = false; }
+            } catch(e) { alert("Lỗi: " + e.message); } finally { btn.innerText = "Chấm điểm & Sửa lỗi"; btn.disabled = false; }
         }
 
         // --- EXPORT TO DEEP DRILL (UPDATED) ---
@@ -1175,32 +1789,13 @@
             if(level === 'b1') levelPrompt = "CEFR B1-C2 (Intermediate to Advanced)";
             if(level === 'b2') levelPrompt = "CEFR B2-C2 (Advanced)";
             
-            const prompt = `
-            Analyze this text and extract 15-20 key vocabulary items (single words, compound words, and common phrases/collocations) appropriate for ${levelPrompt}.
-            Text: "${text.substring(0, 3000)}..."
-            
-            OUTPUT STRICT CSV FORMAT (No markdown blocks, No Header Row).
-            Columns:
-            1. Word/Phrase (e.g., "make a decision", "state-of-the-art", "resilience")
-            2. Vietnamese Meaning (Short, 2-5 words)
-            3. English Definition (Short, simple English explanation)
-            4. IPA (Phonetic transcription)
-            
-            Example Row:
-            "make up my mind","quyết định","to decide","meɪk ʌp maɪ maɪnd"
-            "resilience","khả năng phục hồi","capacity to recover quickly","rɪˈzɪliəns"
-            `;
+            const prompt = `Analyze this text and extract 15-20 key vocabulary items... ${levelPrompt} ... OUTPUT STRICT CSV FORMAT...`;
 
             try {
-                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${getApiKey()}`, {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-                });
-                const data = await res.json();
+                const data = await callGeminiAPI('gemini-2.5-flash-preview-09-2025', { contents: [{ parts: [{ text: prompt }] }] });
+
                 let csvContent = data.candidates?.[0]?.content?.parts?.[0]?.text;
                 csvContent = csvContent.replace(/```csv/g, '').replace(/```/g, '').trim();
-                
-                if(!csvContent) throw new Error("AI không trả về dữ liệu.");
                 
                 downloadCSV(csvContent, `DeepDrill_Export_${Date.now()}.csv`);
                 showToast("Đã tải xuống file CSV!");
@@ -1212,27 +1807,24 @@
         }
         
         function exportDeepDrillFromReading() {
-             const txt = document.getElementById('readingDisplay').innerText.replace('Reading Passage', '');
-             const level = document.getElementById('exportLevelReading').value;
-             exportDeepDrillString(txt, level);
+            const txt = document.getElementById('readingDisplay').innerText.replace('Reading Passage', '');
+            const level = document.getElementById('exportLevelReading').value;
+            exportDeepDrillString(txt, level);
         }
 
         async function exportDeepDrillString(text, levelCode) {
             if(!text || text.length < 50) return alert("Nội dung quá ngắn.");
             showLoader("Đang trích xuất từ vựng...");
-             let levelPrompt = "CEFR B2-C2";
+            let levelPrompt = "CEFR B2-C2";
             if(levelCode === 'all') levelPrompt = "CEFR A1-C2";
             if(levelCode === 'b1') levelPrompt = "CEFR B1-C2";
             if(levelCode === 'b2') levelPrompt = "CEFR B2-C2";
             
             const prompt = `Analyze text, extract 15 key words (${levelPrompt}). Output CSV (No Header): Word/Phrase, VN Meaning, Eng Def, IPA. Text: ${text.substring(0, 3000)}`;
             
-             try {
-                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${getApiKey()}`, {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-                });
-                const data = await res.json();
+            try {
+                const data = await callGeminiAPI('gemini-2.5-flash-preview-09-2025', { contents: [{ parts: [{ text: prompt }] }] });
+
                 let csvContent = data.candidates?.[0]?.content?.parts?.[0]?.text.replace(/```csv/g, '').replace(/```/g, '').trim();
                 downloadCSV(csvContent, `DeepDrill_Reading_${Date.now()}.csv`);
                 showToast("Đã tải xuống CSV!");
@@ -1253,211 +1845,78 @@
             }
         }
 
-        // --- PRONUNCIATION MODULE ---
-        async function generatePronunciationTask() {
-            const type = document.getElementById('pronunType').value; // 'pairs' or 'triplets'
-            const container = document.getElementById('pronunciationContent');
-            const btn = document.getElementById('btnGenPronun');
-            
-            container.innerHTML = '';
-            container.classList.remove('hidden');
-            btn.disabled = true;
-            btn.innerText = 'Đang tạo...';
-            showLoader("Đang tạo bài tập phát âm...");
-
-            const count = type === 'pairs' ? 2 : 3;
-            const prompt = `Generate 5 sets of confusing English words (${count} words per set) for pronunciation practice. 
-            Output strictly JSON array. 
-            Format: [{ "words": [{ "word": "ship", "ipa": "/ʃɪp/", "meaning": "tàu" }, { "word": "sheep", "ipa": "/ʃiːp/", "meaning": "cừu" }], "note": "Short i vs Long i" }]`;
-
-            try {
-                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${getApiKey()}`, {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-                });
-                const data = await res.json();
-                let text = data.candidates?.[0]?.content?.parts?.[0]?.text.replace(/```json/g, '').replace(/```/g, '').trim();
-                pronunciationData = JSON.parse(text);
-                renderPronunciationPairs();
-            } catch (e) {
-                alert("Lỗi: " + e.message);
-            } finally {
-                btn.disabled = false;
-                btn.innerText = 'Tạo Bài Tập';
-                hideLoader();
-            }
-        }
-
-        function renderPronunciationPairs() {
-            const container = document.getElementById('pronunciationContent');
-            container.innerHTML = '';
-            
-            pronunciationData.forEach((group, idx) => {
-                const card = document.createElement('div');
-                card.className = "bg-white p-6 rounded-xl border border-gray-200 shadow-sm card-anim hover:shadow-md";
-                
-                let wordsHtml = `<div class="grid grid-cols-${group.words.length} gap-4 mb-4">`;
-                group.words.forEach((w, wIdx) => {
-                    const id = `p_${idx}_${wIdx}`;
-                    wordsHtml += `
-                        <div class="flex flex-col items-center p-3 rounded-lg bg-gray-50 border border-gray-100 hover:border-teal-200 transition">
-                            <span class="text-2xl font-bold text-gray-800 mb-1">${w.word}</span>
-                            <span class="text-xs font-mono text-gray-500 mb-2">${w.ipa}</span>
-                            <span class="text-xs text-gray-400 italic mb-3">${w.meaning}</span>
-                            <div class="flex space-x-2">
-                                <button onclick="speakText('${w.word}')" class="w-8 h-8 rounded-full bg-blue-100 text-blue-600 hover:bg-blue-200 flex items-center justify-center transition" title="Nghe mẫu">
-                                    <i class="fas fa-volume-up text-sm"></i>
-                                </button>
-                                <button id="btn_${id}" onclick="togglePronunciationSpeech('${w.word}', 'feedback_${id}', 'btn_${id}')" class="w-8 h-8 rounded-full bg-teal-100 text-teal-600 hover:bg-teal-200 flex items-center justify-center transition" title="Nói">
-                                    <i class="fas fa-microphone text-sm"></i>
-                                </button>
-                            </div>
-                            <div id="feedback_${id}" class="mt-2 text-xs font-bold h-4"></div>
-                        </div>
-                    `;
-                });
-                wordsHtml += `</div>`;
-                
-                card.innerHTML = `
-                    <div class="flex items-center justify-between mb-4 pb-2 border-b border-gray-100">
-                        <span class="bg-teal-50 text-teal-700 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">Set ${idx + 1}</span>
-                        <span class="text-sm font-medium text-gray-500 italic"><i class="fas fa-info-circle mr-1"></i> ${group.note || 'Distinguish these sounds'}</span>
-                    </div>
-                    ${wordsHtml}
-                `;
-                container.appendChild(card);
-            });
-        }
-
-        // --- PRONUNCIATION LOGIC ---
-        // We reuse the single 'recognition' instance but need to know context
-        let currentPronunTarget = "";
-        let currentPronunFeedbackId = "";
-        let currentPronunBtnId = "";
-
-        function togglePronunciationSpeech(word, feedbackId, btnId) {
-            if(!recognition) {
-                initSpeechRecognition();
-                if(!recognition) return alert("Trình duyệt không hỗ trợ Mic.");
-            }
-            
-            // If we are recording for THIS word, stop
-            if(isRecording && currentPronunBtnId === btnId) {
-                recognition.stop();
-                return;
-            }
-            
-            // If recording something else, stop that first
-            if(isRecording) {
-                recognition.stop();
-                // Wait small delay then start new? Simplified: just stop. User clicks again.
-                return; 
-            }
-
-            // Start new recording
-            currentPronunTarget = word;
-            currentPronunFeedbackId = feedbackId;
-            currentPronunBtnId = btnId;
-            
-            try {
-                recognition.start();
-                // We rely on global onstart/onend to update UI, but need to handle specific button styling
-            } catch(e) { console.error(e); }
-        }
-
-        // Modify initSpeechRecognition to handle Pronunciation module logic
-        // We need a more robust event handler that knows WHICH module is active
-        // Simplification: The global 'recognition' object shares event handlers.
-        // We need to update them or check state inside them.
-
-        function speakText(text) {
-            window.speechSynthesis.cancel();
-            const utterance = new SpeechSynthesisUtterance(text);
-            utterance.lang = 'en-US';
-            window.speechSynthesis.speak(utterance);
-        }
-
-        // Overwrite initSpeechRecognition to be smarter about context
+        // --- DEEP DRILL MODULE ---
         function initSpeechRecognition() {
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
             if (SpeechRecognition) {
                 recognition = new SpeechRecognition();
-                recognition.lang = 'en-US';
-                recognition.interimResults = false;
+                recognition.lang = 'en-US'; 
+                recognition.interimResults = false; 
                 recognition.maxAlternatives = 1;
-
-                recognition.onstart = () => {
-                    isRecording = true;
-                    // Deep Drill UI
-                    const deepBtn = document.getElementById('btnDeepSpeak');
-                    if(deepBtn && !document.getElementById('viewDeep').classList.contains('hidden')) {
-                        deepBtn.classList.add('bg-purple-100', 'pulse-ring');
-                        document.getElementById('btnDeepSpeakText').innerText = "Đang nghe...";
-                    }
-                    // Pronunciation UI
-                    if(currentPronunBtnId && !document.getElementById('viewPronunciation').classList.contains('hidden')) {
-                        const btn = document.getElementById(currentPronunBtnId);
-                        if(btn) {
-                            btn.classList.remove('bg-teal-100', 'text-teal-600');
-                            btn.classList.add('bg-red-500', 'text-white', 'pulse-ring');
-                        }
-                        document.getElementById(currentPronunFeedbackId).innerHTML = '<span class="text-gray-400">...</span>';
-                    }
+                
+                recognition.onstart = () => { 
+                    isRecording = true; 
+                    const btn = document.getElementById('btnDeepSpeak');
+                    if(btn) btn.classList.add('bg-purple-100', 'pulse-ring'); 
+                    const txt = document.getElementById('btnDeepSpeakText');
+                    if(txt) txt.innerText = "Đang nghe..."; 
                 };
-
-                recognition.onend = () => {
+                
+                recognition.onend = () => { 
+                    isRecording = false; 
+                    const btn = document.getElementById('btnDeepSpeak');
+                    if(btn) btn.classList.remove('bg-purple-100', 'pulse-ring'); 
+                    const txt = document.getElementById('btnDeepSpeakText');
+                    if(txt) txt.innerText = "Bấm để nói"; 
+                };
+                
+                recognition.onerror = (event) => {
                     isRecording = false;
-                    // Deep Drill UI
-                    const deepBtn = document.getElementById('btnDeepSpeak');
-                    if(deepBtn) {
-                        deepBtn.classList.remove('bg-purple-100', 'pulse-ring');
-                        document.getElementById('btnDeepSpeakText').innerText = "Bấm để nói";
-                    }
-                    // Pronunciation UI
-                    if(currentPronunBtnId) {
-                        const btn = document.getElementById(currentPronunBtnId);
-                        if(btn) {
-                            btn.classList.add('bg-teal-100', 'text-teal-600');
-                            btn.classList.remove('bg-red-500', 'text-white', 'pulse-ring');
-                        }
-                        // Don't clear ID yet, let onresult use it
-                    }
+                    const txt = document.getElementById('btnDeepSpeakText');
+                    if(txt) txt.innerText = "Lỗi Mic (Thử lại)";
+                    const btn = document.getElementById('btnDeepSpeak');
+                    if(btn) btn.classList.remove('bg-purple-100', 'pulse-ring');
                 };
 
-                recognition.onresult = (event) => {
-                    const spoken = event.results[0][0].transcript;
-                    const activeTab = document.querySelector('.tab-active').id;
-
-                    if(activeTab === 'tabDeep') {
-                        checkDeepPronunciation(spoken);
-                    } else if (activeTab === 'tabPronunciation') {
-                        checkWordPronunciation(spoken);
-                    }
-                };
+                recognition.onresult = (e) => checkDeepPronunciation(e.results[0][0].transcript);
             }
         }
 
-        function checkWordPronunciation(spoken) {
-            if(!currentPronunTarget || !currentPronunFeedbackId) return;
-            
-            const clean = s => s.toLowerCase().replace(/[^a-z]/g, "");
-            const target = clean(currentPronunTarget);
-            const user = clean(spoken);
-            
-            const el = document.getElementById(currentPronunFeedbackId);
-            if(target === user) {
-                el.innerHTML = `<span class="text-green-600"><i class="fas fa-check"></i> ${spoken}</span>`;
+        function toggleDeepSpeech() {
+            if(!recognition) {
+                initSpeechRecognition();
+                if(!recognition) return alert("Trình duyệt của bạn không hỗ trợ Speech API.");
+            }
+            if(isRecording) { recognition.stop(); } else { try { recognition.start(); } catch(e) { console.error(e); alert("Lỗi Mic."); } }
+        }
+
+        function checkDeepPronunciation(spoken) {
+            const target = deepSessionData[deepCurrentGroup]?.challenges[deepCurrentChallenge]?.text;
+            if(!target) return;
+            const resDiv = document.getElementById('deepSpeechResult'); resDiv.classList.remove('hidden');
+            const clean = s => s.toLowerCase().replace(/[^a-z0-9]/g, "");
+            if(clean(spoken) === clean(target)) {
+                document.getElementById('deepSpeechFeedback').innerHTML = `<span class="text-green-600">✅ Chính xác!</span>`;
+                document.getElementById('deepSpokenText').innerText = spoken;
             } else {
-                el.innerHTML = `<span class="text-red-500"><i class="fas fa-times"></i> ${spoken}</span>`;
+                document.getElementById('deepSpeechFeedback').innerHTML = `<span class="text-red-500">❌ Thử lại!</span>`;
+                document.getElementById('deepSpokenText').innerText = spoken;
             }
-            // Reset context
-            currentPronunBtnId = null; 
         }
-
-        // --- DEEP DRILL MODULE ---
-        // (Existing Deep Drill Functions... handleDeepFileUpload, parseDeepCSV, processDeepData...)
-        // ... (Keep existing code from v25 but update parseDeepCSV to handle 4 columns) ...
-
+        
+        function handleDeepFileUpload(e) {
+            const file = e.target.files[0]; if(!file) return;
+            deepFileName = file.name;
+            const reader = new FileReader();
+            reader.onload = (evt) => {
+                const parsed = parseDeepCSV(evt.target.result);
+                if(parsed.length > 0) {
+                    processDeepData(parsed);
+                    showToast(`Đã tải ${parsed.length} nhóm từ.`);
+                } else alert("File lỗi hoặc rỗng.");
+            };
+            reader.readAsText(file);
+        }
         function parseDeepCSV(text) {
             const rows = []; let row = []; let cell = ""; let inQuote = false;
             for(let i=0; i<text.length; i++) {
@@ -1473,29 +1932,11 @@
             
             const result = [];
             for(let r of rows) {
-                if(r.length < 2) continue; // Allow fewer columns, fill defaults
-                // New Format: Word, Meaning, EngDef, IPA
-                result.push({ w: r[0], m: r[1]||"", s: r[2]||"", p: r[3]||"" });
+                if(r.length < 3) continue; // Allow at least 3 columns
+                result.push({ w: r[0], m: r[1], s: r[2], p: r[3]||"" });
             }
             return result;
         }
-
-        // ... (Rest of existing logic for Deep Drill remains same, checkDeepPronunciation etc.) ...
-        
-        function handleDeepFileUpload(e) {
-            const file = e.target.files[0]; if(!file) return;
-            deepFileName = file.name;
-            const reader = new FileReader();
-            reader.onload = (evt) => {
-                const parsed = parseDeepCSV(evt.target.result);
-                if(parsed.length > 0) {
-                    processDeepData(parsed);
-                    showToast(`Đã tải ${parsed.length} nhóm từ.`);
-                } else alert("File lỗi hoặc rỗng.");
-            };
-            reader.readAsText(file);
-        }
-
         function processDeepData(rawData) {
             deepSessionData = rawData.map(row => {
                 const challenges = [];
@@ -1519,7 +1960,6 @@
             
             startDeepSession();
         }
-
         function startDeepSession() {
             document.getElementById('deepEmptyState').classList.add('hidden');
             document.getElementById('deepGameArea').classList.remove('hidden');
@@ -1527,7 +1967,6 @@
             document.getElementById('btnDeepReset').classList.remove('hidden');
             loadDeepChallenge();
         }
-
         function loadDeepChallenge() {
             if(!deepSessionData[deepCurrentGroup]) { finishDeepSession(); return; }
             const group = deepSessionData[deepCurrentGroup];
@@ -1563,7 +2002,6 @@
             
             localStorage.setItem(`deep_prog_${deepFileName}`, JSON.stringify({ g: deepCurrentGroup, s: deepScore }));
         }
-
         function renderDeepDots(total, current) {
             let h = "";
             for(let i=0; i<total; i++) {
@@ -1573,13 +2011,11 @@
             }
             document.getElementById('deepStepDots').innerHTML = h;
         }
-
         function playDeepAudio() {
             const txt = deepSessionData[deepCurrentGroup].challenges[deepCurrentChallenge].text;
             const u = new SpeechSynthesisUtterance(txt); u.lang = 'en-US'; u.rate = 0.9;
             window.speechSynthesis.cancel(); window.speechSynthesis.speak(u);
         }
-
         function handleDeepSubmit(e) { e.preventDefault(); if(document.getElementById('btnDeepNext').classList.contains('hidden')) checkDeepAnswer(); else nextDeepChallenge(); }
         
         function checkDeepAnswer() {
@@ -1638,7 +2074,6 @@
                 document.getElementById('deepSynonymList').innerHTML = `<li class="text-sm italic text-gray-600">${chal.engDef}</li>`;
             } else document.getElementById('deepSynonymSection').classList.add('hidden');
         }
-
         function nextDeepChallenge() {
             if(deepCurrentChallenge < deepSessionData[deepCurrentGroup].challenges.length - 1) {
                 deepCurrentChallenge++; loadDeepChallenge();
@@ -1648,14 +2083,12 @@
                 } else finishDeepSession();
             }
         }
-
         function finishDeepSession() {
-             document.getElementById('deepGameArea').classList.add('hidden');
-             document.getElementById('deepEndScreen').classList.remove('hidden');
-             document.getElementById('deepProgressBar').style.width = '100%';
-             localStorage.removeItem(`deep_prog_${deepFileName}`);
+            document.getElementById('deepGameArea').classList.add('hidden');
+            document.getElementById('deepEndScreen').classList.remove('hidden');
+            document.getElementById('deepProgressBar').style.width = '100%';
+            localStorage.removeItem(`deep_prog_${deepFileName}`);
         }
-
         function toggleDeepHint() {
             const chal = deepSessionData[deepCurrentGroup].challenges[deepCurrentChallenge];
             document.getElementById('deepHintArea').classList.toggle('hidden');
@@ -1671,6 +2104,7 @@
             let idx = parseInt(val) - 1;
             if (isNaN(idx) || idx < 0) idx = 0;
             if (idx >= deepSessionData.length) idx = deepSessionData.length - 1;
+            
             deepCurrentGroup = idx;
             deepCurrentChallenge = 0; 
             loadDeepChallenge();
@@ -1679,18 +2113,169 @@
         function deepRestart() { deepCurrentGroup=0; deepCurrentChallenge=0; deepScore={correct:0,wrong:0}; startDeepSession(); }
         function deepResetProgress() { if(confirm("Xóa tiến độ?")) { localStorage.removeItem(`deep_prog_${deepFileName}`); deepRestart(); } }
 
-        // --- JUMP TO NEW MODULE ---
-        function togglePronunciationSpeech(word, feedbackId, btnId) {
-            if(!recognition) {
-                initSpeechRecognition();
-                if(!recognition) return alert("Trình duyệt không hỗ trợ Mic.");
+        // --- PRONUNCIATION MODULE ---
+
+        async function generatePronunciationDrill() {
+            const type = document.getElementById('pronunType').value;
+            const count = 3; // Tăng lên 3 cặp/nhóm theo yêu cầu
+            const historyStr = pronunciationHistory.join(", ");
+            const btn = document.getElementById('btnGenPronun');
+            btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Đang tạo...';
+            showLoader("AI đang tìm cặp từ dễ nhầm lẫn...");
+
+            // Cập nhật Prompt để yêu cầu thêm nghĩa tiếng Việt
+            const prompt = `Generate ${count} unique minimal ${type} (words that sound similar but are different) for English learners.
+            Type: ${type === 'pairs' ? 'Pairs (2 words)' : 'Groups of 3 words'}.
+            Exclude words: [${historyStr}].
+            Output STRICT JSON format (Array of objects):
+            [
+                {
+                    "words": ["ship", "sheep"],
+                    "ipa": ["ʃɪp", "ʃiːp"],
+                    "meanings": ["tàu thủy", "con cừu"],
+                    "desc": "Short i vs Long i"
+                },
+                ...
+            ]`;
+
+            try {
+                const data = await callGeminiAPI('gemini-2.5-flash-preview-09-2025', { contents: [{ parts: [{ text: prompt }] }] });
+                
+                let txt = getSafeText(data).replace(/```json/g, '').replace(/```/g, '').trim();
+                let json;
+                try {
+                    json = JSON.parse(txt);
+                } catch (e) {
+                    throw new Error("Lỗi đọc dữ liệu từ AI. Vui lòng thử lại.");
+                }
+
+                if (!Array.isArray(json)) {
+                    throw new Error("Dữ liệu trả về không đúng định dạng danh sách.");
+                }
+                
+                pronunciationData = json;
+                
+                // Add to history safely
+                json.forEach(item => {
+                    if (item.words && Array.isArray(item.words)) {
+                        item.words.forEach(w => pronunciationHistory.push(w));
+                    }
+                });
+                
+                renderPronunciationDrill();
+                showToast("Đã tạo bài tập mới!");
+            } catch(e) {
+                alert("Lỗi AI: " + e.message);
+            } finally {
+                btn.disabled = false; btn.innerHTML = '<i class="fas fa-sync-alt mr-2"></i> Tạo bài tập (AI)';
+                hideLoader();
             }
-            if(isRecording && currentPronunBtnId === btnId) { recognition.stop(); return; }
-            if(isRecording) { recognition.stop(); return; }
-            currentPronunTarget = word;
-            currentPronunFeedbackId = feedbackId;
-            currentPronunBtnId = btnId;
-            try { recognition.start(); } catch(e) { console.error(e); }
+        }
+
+        function renderPronunciationDrill() {
+            const grid = document.getElementById('pronunGrid');
+            const empty = document.getElementById('pronunEmpty');
+            
+            if(!pronunciationData || pronunciationData.length === 0) {
+                empty.classList.remove('hidden');
+                grid.classList.add('hidden');
+                return;
+            }
+
+            empty.classList.add('hidden');
+            grid.classList.remove('hidden');
+            grid.innerHTML = '';
+
+            pronunciationData.forEach((group, groupIdx) => {
+                let cardsHtml = '';
+                if (group.words && Array.isArray(group.words)) {
+                    group.words.forEach((word, wordIdx) => {
+                        const ipa = (group.ipa && group.ipa[wordIdx]) ? group.ipa[wordIdx] : '';
+                        const meaning = (group.meanings && group.meanings[wordIdx]) ? group.meanings[wordIdx] : '';
+                        
+                        cardsHtml += `
+                            <div class="flex flex-col items-center p-2 bg-gray-50 rounded border border-gray-100 relative h-full">
+                                <span class="text-lg font-bold text-gray-800">${word}</span>
+                                <span class="text-xs text-gray-500 font-mono mb-1">/${ipa}/</span>
+                                <span class="text-[11px] text-indigo-600 font-medium mb-3 text-center min-h-[1rem]">${meaning}</span>
+                                <div class="flex space-x-2 mt-auto">
+                                    <button onclick="playWord('${word}')" class="w-8 h-8 rounded-full bg-teal-100 text-teal-700 hover:bg-teal-200 flex items-center justify-center transition" title="Nghe mẫu">
+                                        <i class="fas fa-volume-up text-xs"></i>
+                                    </button>
+                                    <button onclick="checkPronunciation('${word}', 'pronunRes_${groupIdx}_${wordIdx}')" class="w-8 h-8 rounded-full bg-white border border-gray-300 text-gray-600 hover:text-teal-600 hover:border-teal-400 flex items-center justify-center transition" title="Kiểm tra giọng">
+                                        <i class="fas fa-microphone text-xs"></i>
+                                    </button>
+                                </div>
+                                <div id="pronunRes_${groupIdx}_${wordIdx}" class="mt-2 h-4 text-[10px] font-bold text-center w-full"></div>
+                            </div>
+                        `;
+                    });
+
+                    const card = document.createElement('div');
+                    card.className = "bg-white p-4 rounded-xl shadow-sm border border-gray-200 pronun-card";
+                    card.innerHTML = `
+                        <div class="text-xs font-bold text-teal-600 uppercase mb-3 tracking-wide border-b border-gray-100 pb-2">${group.desc || 'Minimal Pair'}</div>
+                        <div class="grid grid-cols-${group.words.length} gap-2 divide-x divide-gray-100">
+                            ${cardsHtml}
+                        </div>
+                    `;
+                    grid.appendChild(card);
+                }
+            });
+        }
+
+        function playWord(word) {
+            const u = new SpeechSynthesisUtterance(word);
+            u.lang = 'en-US';
+            window.speechSynthesis.cancel();
+            window.speechSynthesis.speak(u);
+        }
+
+        function checkPronunciation(targetWord, resultElemId) {
+            if (!window.SpeechRecognition && !window.webkitSpeechRecognition) {
+                return alert("Trình duyệt không hỗ trợ Speech API.");
+            }
+            
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            const rec = new SpeechRecognition();
+            rec.lang = 'en-US';
+            rec.interimResults = false;
+            rec.maxAlternatives = 1;
+
+            const resEl = document.getElementById(resultElemId);
+            resEl.innerHTML = '<i class="fas fa-spinner fa-spin text-teal-500"></i>';
+
+            rec.onstart = () => {};
+            rec.onend = () => {};
+            rec.onerror = (e) => { resEl.innerHTML = '<span class="text-red-500">Lỗi Mic</span>'; };
+            
+            rec.onresult = (e) => {
+                const spoken = e.results[0][0].transcript.toLowerCase().replace(/[^a-z0-9]/g, "");
+                const target = targetWord.toLowerCase().replace(/[^a-z0-9]/g, "");
+                
+                if (spoken === target) {
+                    resEl.innerHTML = '<span class="text-green-600"><i class="fas fa-check"></i> Đúng!</span>';
+                } else {
+                    resEl.innerHTML = `<span class="text-red-500" title="Bạn nói: ${spoken}">Sai (${spoken})</span>`;
+                }
+            };
+            
+            rec.start();
+        }
+
+        function exportPronunciation() {
+            if (pronunciationData.length === 0) return alert("Chưa có dữ liệu để xuất.");
+            
+            let csv = "Group ID,Description,Word,IPA,Meaning\n"; // Thêm cột Meaning
+            pronunciationData.forEach((group, idx) => {
+                group.words.forEach((w, wIdx) => {
+                    const safeDesc = (group.desc || "").replace(/,/g, " ");
+                    const meaning = (group.meanings && group.meanings[wIdx]) ? group.meanings[wIdx].replace(/,/g, " ") : "";
+                    csv += `${idx + 1},"${safeDesc}","${w}","${group.ipa[wIdx]}","${meaning}"\n`;
+                });
+            });
+            
+            downloadCSV(csv, `Pronunciation_Drill_${Date.now()}.csv`);
         }
 
     </script>
