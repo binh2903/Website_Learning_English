@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>English Master: v26 Pro (Pronunciation Fixed)</title>
+    <title>English Master: v27 Pro (Auto API)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -46,24 +46,70 @@
         /* Pronunciation Card Styles */
         .pronun-card { transition: transform 0.2s; }
         .pronun-card:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); }
+
+        /* Admin API Styles */
+        .key-item { transition: all 0.2s; }
+        .key-status-good { background-color: #dcfce7; border-color: #86efac; color: #166534; }
+        .key-status-bad { background-color: #fee2e2; border-color: #fca5a5; color: #991b1b; }
+        .key-status-unknown { background-color: #f3f4f6; border-color: #e5e7eb; color: #4b5563; }
     </style>
 </head>
 <body class="h-screen flex flex-col items-center p-2 sm:p-4 bg-gradient-to-br from-blue-50 to-indigo-50 overflow-hidden">
 
-    <!-- API KEY MINI TOOL -->
+    <!-- API KEY & ADMIN TOOL -->
     <div id="apiKeyContainer" class="fixed bottom-4 left-4 z-50 flex flex-col items-start">
-        <div id="apiKeyInputBox" class="hidden bg-white p-3 rounded-lg shadow-xl border border-gray-200 mb-2 w-72 animate-fade-in-up relative">
+        <div id="apiKeyInputBox" class="hidden bg-white p-3 rounded-lg shadow-xl border border-gray-200 mb-2 w-80 animate-fade-in-up relative max-h-[80vh] flex flex-col">
             <div class="absolute -bottom-1 left-4 w-2 h-2 bg-white transform rotate-45 border-b border-r border-gray-200"></div>
-            <div class="flex justify-between items-center mb-2">
+            
+            <!-- Header -->
+            <div class="flex justify-between items-center mb-2 flex-shrink-0">
                 <label class="text-xs font-bold text-gray-700 flex items-center">
-                    <i class="fas fa-key text-yellow-500 mr-1.5"></i> Gemini API Key
+                    <i class="fas fa-key text-yellow-500 mr-1.5"></i> Cấu hình API
                 </label>
-                <a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-[10px] text-blue-500 hover:underline">Lấy Key</a>
+                <div class="flex space-x-2">
+                    <button onclick="toggleAdminPanel()" class="text-[10px] text-indigo-600 hover:underline font-bold" id="btnAdminToggle">Admin Login</button>
+                    <button onclick="toggleApiKeyBox()" class="text-gray-400 hover:text-gray-600"><i class="fas fa-times"></i></button>
+                </div>
             </div>
-            <input type="password" id="userApiKeyInput" class="w-full p-2 border border-gray-300 rounded text-xs mb-2 focus:outline-none focus:border-indigo-500 font-mono text-gray-600" placeholder="Paste your API Key here...">
-            <div class="flex justify-end space-x-2">
-                <button onclick="toggleApiKeyBox()" class="text-gray-500 hover:bg-gray-100 px-3 py-1.5 rounded text-xs font-medium">Đóng</button>
-                <button onclick="saveUserApiKey()" class="bg-indigo-600 text-white px-3 py-1.5 rounded text-xs font-bold hover:bg-indigo-700 shadow-sm">Lưu Key</button>
+
+            <!-- Standard User View (Manual Input) -->
+            <div id="userApiView" class="mb-2">
+                <input type="password" id="userApiKeyInput" class="w-full p-2 border border-gray-300 rounded text-xs mb-2 focus:outline-none focus:border-indigo-500 font-mono text-gray-600" placeholder="Nhập Key thủ công (nếu có)...">
+                <button onclick="saveUserApiKey()" class="w-full bg-indigo-600 text-white px-3 py-1.5 rounded text-xs font-bold hover:bg-indigo-700 shadow-sm">Lưu Key Cá Nhân</button>
+            </div>
+
+            <!-- Admin Login View -->
+            <div id="adminLoginView" class="hidden border-t border-gray-100 pt-2">
+                <p class="text-[10px] text-gray-500 mb-1">Nhập mật khẩu quản trị để mở kho Key:</p>
+                <div class="flex space-x-1 mb-1">
+                    <input type="password" id="adminPassInput" class="flex-1 p-2 border border-gray-300 rounded text-xs focus:outline-none focus:border-indigo-500" placeholder="Password...">
+                    <button onclick="checkAdminLogin()" class="bg-gray-800 text-white px-3 py-1.5 rounded text-xs font-bold hover:bg-gray-700">Mở</button>
+                </div>
+                <button onclick="backToUserView()" class="w-full text-gray-500 hover:bg-gray-100 py-1 rounded text-[10px] border border-gray-200"><i class="fas fa-arrow-left mr-1"></i> Quay lại nhập thủ công</button>
+                <p id="adminLoginMsg" class="text-[10px] text-red-500 mt-1 hidden">Sai mật khẩu!</p>
+            </div>
+
+            <!-- Admin Dashboard (Unlocked) -->
+            <div id="adminDashboard" class="hidden flex-col flex-1 min-h-0 border-t border-gray-100 pt-2 mt-1">
+                <div class="flex justify-between items-center mb-2 bg-indigo-50 p-2 rounded">
+                    <div class="flex items-center">
+                        <button onclick="backToUserView()" class="mr-2 text-indigo-400 hover:text-indigo-700 transition" title="Thoát ra nhập tay"><i class="fas fa-arrow-left"></i></button>
+                        <span class="text-[10px] font-bold text-indigo-800"><i class="fas fa-robot mr-1"></i>Auto Mode</span>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="toggleAutoRotate" class="sr-only peer" onchange="toggleAutoMode(this.checked)">
+                        <div class="w-7 h-4 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-green-600"></div>
+                    </label>
+                </div>
+
+                <div class="flex-1 overflow-y-auto mb-2 border border-gray-100 rounded bg-gray-50 p-1 custom-scrollbar max-h-40">
+                    <ul id="adminKeyList" class="space-y-1"></ul>
+                </div>
+
+                <div class="flex space-x-1 mt-auto pt-2 border-t border-gray-100">
+                    <input type="text" id="newKeyInput" class="flex-1 p-1.5 border border-gray-300 rounded text-[10px] font-mono" placeholder="Thêm Key mới...">
+                    <button onclick="addNewKey()" class="bg-green-600 text-white px-2 py-1 rounded text-[10px] font-bold hover:bg-green-700"><i class="fas fa-plus"></i></button>
+                </div>
             </div>
         </div>
         <button onclick="toggleApiKeyBox()" class="w-10 h-10 bg-gray-900 text-white rounded-full shadow-lg flex items-center justify-center hover:bg-gray-800 transition ring-2 ring-white" title="Cài đặt API Key">
@@ -195,7 +241,7 @@
     <!-- Header -->
     <div class="w-full max-w-7xl flex flex-col mb-2 flex-shrink-0">
         <div class="flex justify-between items-center mb-2">
-            <h1 class="text-xl sm:text-2xl font-bold text-gray-800"><i class="fas fa-layer-group mr-2 text-indigo-600"></i>English Master <span class="text-xs bg-indigo-600 text-white px-2 py-0.5 rounded-full ml-1">v26 Pro</span></h1>
+            <h1 class="text-xl sm:text-2xl font-bold text-gray-800"><i class="fas fa-layer-group mr-2 text-indigo-600"></i>English Master <span class="text-xs bg-indigo-600 text-white px-2 py-0.5 rounded-full ml-1">v27 Pro</span></h1>
             
             <div id="audioUploadContainer" class="flex space-x-2 items-center">
                 <button onclick="openAudioGenModal()" class="bg-pink-100 border border-pink-200 hover:bg-pink-200 text-pink-700 px-3 py-1.5 rounded-lg shadow-sm text-sm font-bold transition flex items-center">
@@ -593,32 +639,237 @@
     <script>
         const defaultApiKey = ""; 
         const FILE_SIZE_LIMIT = 9.5 * 1024 * 1024;
+        
+        // --- API KEY MANAGEMENT (NEW) ---
+        // 1. Pre-supplied Keys
+        const defaultKeys = [
+            "AIzaSyDW2jzbCXaql1D8l9f7vmHyN6JknN5yImo",
+            "AIzaSyDS7CIwEa4qWnQ6778IwMwWWp0fD-QRmNo",
+            "AIzaSyDJ66vf6eyfOnwbGeQIRi4Hk1yUy0axvmA",
+            "AIzaSyBdzSceL2owM51O1ECfp43CUnxZrav5O3k",
+            "AIzaSyAFNplq1n2Q4rUmfRRzXZymJwiWzoBW3B8",
+        ];
+        
+        // 2. State Variables
+        let userManualKey = localStorage.getItem("USER_GEMINI_API_KEY") || "";
+        let adminKeys = JSON.parse(localStorage.getItem("ADMIN_API_KEYS")) || [...defaultKeys];
+        let adminKeyStatus = adminKeys.map(() => 'unknown'); // 'good', 'bad', 'unknown'
+        let currentAdminKeyIndex = 0;
+        let isAutoMode = localStorage.getItem("API_AUTO_MODE") === 'true';
+        let isAdminUnlocked = false;
 
-        // --- API KEY LOGIC ---
-        function getApiKey() {
-            const userKey = localStorage.getItem("USER_GEMINI_API_KEY");
-            return userKey || defaultApiKey;
-        }
-
+        // 3. UI Toggles
         function toggleApiKeyBox() {
             const box = document.getElementById('apiKeyInputBox');
             box.classList.toggle('hidden');
             if(!box.classList.contains('hidden')) {
-                document.getElementById('userApiKeyInput').value = localStorage.getItem("USER_GEMINI_API_KEY") || "";
+                document.getElementById('userApiKeyInput').value = userManualKey;
+                // Don't auto-show admin panel, stay on user view by default unless already logged in
+                if (isAdminUnlocked) {
+                    renderAdminKeyList();
+                } else {
+                    backToUserView(); // Reset to user view
+                }
+            }
+        }
+
+        function toggleAdminPanel() {
+            const btn = document.getElementById('btnAdminToggle');
+            const loginView = document.getElementById('adminLoginView');
+            const dashView = document.getElementById('adminDashboard');
+            const userView = document.getElementById('userApiView');
+            
+            userView.classList.add('hidden');
+            btn.classList.add('hidden');
+
+            if (!isAdminUnlocked) {
+                loginView.classList.remove('hidden');
+                document.getElementById('adminPassInput').focus();
+            } else {
+                dashView.classList.remove('hidden');
+            }
+        }
+
+        function backToUserView() {
+            document.getElementById('adminLoginView').classList.add('hidden');
+            document.getElementById('adminDashboard').classList.add('hidden');
+            document.getElementById('userApiView').classList.remove('hidden');
+            document.getElementById('btnAdminToggle').classList.remove('hidden');
+            document.getElementById('adminLoginMsg').classList.add('hidden');
+            document.getElementById('adminPassInput').value = '';
+        }
+
+        function checkAdminLogin() {
+            const pass = document.getElementById('adminPassInput').value;
+            // Passwords: 091440 OR Nguyenducbinh1$
+            if (pass === '091440' || pass === 'Nguyenducbinh1$') {
+                isAdminUnlocked = true;
+                document.getElementById('adminLoginView').classList.add('hidden');
+                document.getElementById('adminDashboard').classList.remove('hidden');
+                document.getElementById('toggleAutoRotate').checked = isAutoMode;
+                renderAdminKeyList();
+                showToast("Đã mở khóa Admin Mode");
+            } else {
+                document.getElementById('adminLoginMsg').classList.remove('hidden');
             }
         }
 
         function saveUserApiKey() {
             const key = document.getElementById('userApiKeyInput').value.trim();
             if(key) {
+                userManualKey = key;
                 localStorage.setItem("USER_GEMINI_API_KEY", key);
-                showToast("Đã lưu API Key!");
-                toggleApiKeyBox();
+                showToast("Đã lưu Key cá nhân!");
+                // Turn off auto mode if user sets manual key
+                isAutoMode = false;
+                localStorage.setItem("API_AUTO_MODE", 'false');
             } else {
+                userManualKey = "";
                 localStorage.removeItem("USER_GEMINI_API_KEY");
-                showToast("Đã xóa API Key cá nhân!");
+                showToast("Đã xóa Key cá nhân!");
+            }
+            toggleApiKeyBox();
+        }
+
+        // 4. Admin Logic
+        function renderAdminKeyList() {
+            const list = document.getElementById('adminKeyList');
+            list.innerHTML = '';
+            adminKeys.forEach((key, idx) => {
+                let statusClass = 'key-status-unknown';
+                let icon = 'fa-question-circle';
+                
+                if (adminKeyStatus[idx] === 'good') { statusClass = 'key-status-good'; icon = 'fa-check-circle'; }
+                if (adminKeyStatus[idx] === 'bad') { statusClass = 'key-status-bad'; icon = 'fa-exclamation-circle'; }
+
+                const isCurrent = (idx === currentAdminKeyIndex && isAutoMode) ? 'ring-2 ring-indigo-500' : '';
+                const displayKey = key.substring(0, 8) + '...' + key.substring(key.length - 4);
+
+                const li = document.createElement('li');
+                li.className = `flex justify-between items-center p-1.5 border rounded text-[10px] bg-white ${isCurrent} ${statusClass}`;
+                li.innerHTML = `
+                    <div class="flex items-center space-x-2 overflow-hidden">
+                        <span class="font-bold text-gray-500 w-4">${idx + 1}.</span>
+                        <code class="font-mono truncate w-32" title="${key}">${displayKey}</code>
+                    </div>
+                    <div class="flex items-center space-x-1">
+                        <i class="fas ${icon}"></i>
+                        <button onclick="removeAdminKey(${idx})" class="text-gray-400 hover:text-red-500"><i class="fas fa-trash"></i></button>
+                    </div>
+                `;
+                list.appendChild(li);
+            });
+        }
+
+        function addNewKey() {
+            const input = document.getElementById('newKeyInput');
+            const val = input.value.trim();
+            if (val && val.length > 10) {
+                adminKeys.push(val);
+                adminKeyStatus.push('unknown');
+                localStorage.setItem("ADMIN_API_KEYS", JSON.stringify(adminKeys));
+                renderAdminKeyList();
+                input.value = '';
+            } else {
+                alert("Key không hợp lệ.");
             }
         }
+
+        function removeAdminKey(index) {
+            if (confirm("Xóa Key này?")) {
+                adminKeys.splice(index, 1);
+                adminKeyStatus.splice(index, 1);
+                localStorage.setItem("ADMIN_API_KEYS", JSON.stringify(adminKeys));
+                renderAdminKeyList();
+            }
+        }
+
+        function toggleAutoMode(checked) {
+            isAutoMode = checked;
+            localStorage.setItem("API_AUTO_MODE", checked);
+            renderAdminKeyList();
+            if(checked) showToast("Đã bật Tự động xoay vòng Key");
+            else showToast("Đã tắt Tự động");
+        }
+
+        // --- CORE API WRAPPER (AUTO-ROTATION) ---
+        async function getGeminiResponse(payload, model = "gemini-2.5-flash-preview-09-2025:generateContent") {
+            // Determine active key strategy
+            let activeKey = "";
+            let useRotation = false;
+
+            if (isAutoMode && adminKeys.length > 0) {
+                useRotation = true;
+                // Ensure index is valid
+                if (currentAdminKeyIndex >= adminKeys.length) currentAdminKeyIndex = 0;
+            } else {
+                // Manual mode
+                activeKey = userManualKey || defaultApiKey; // Fallback to empty if not set
+            }
+
+            const maxRetries = useRotation ? adminKeys.length : 1; 
+            let attempts = 0;
+
+            while (attempts < maxRetries) {
+                // Pick key
+                if (useRotation) {
+                    activeKey = adminKeys[currentAdminKeyIndex];
+                }
+
+                if (!activeKey) throw new Error("Chưa nhập API Key.");
+
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}?key=${activeKey}`;
+
+                try {
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    const data = await response.json();
+
+                    // Check for specific API errors (Quota, Key Invalid, etc.)
+                    if (!response.ok || data.error) {
+                        const errMsg = data.error ? data.error.message : response.statusText;
+                        console.warn(`Key ${activeKey.substring(0,5)}... failed: ${errMsg}`);
+                        
+                        if (useRotation) {
+                            // Mark Bad
+                            adminKeyStatus[currentAdminKeyIndex] = 'bad';
+                            // Rotate
+                            currentAdminKeyIndex = (currentAdminKeyIndex + 1) % adminKeys.length;
+                            attempts++;
+                            // Update UI if open
+                            if(isAdminUnlocked) renderAdminKeyList();
+                            continue; // Retry loop
+                        } else {
+                            throw new Error(errMsg);
+                        }
+                    }
+
+                    // Success
+                    if (useRotation) {
+                        adminKeyStatus[currentAdminKeyIndex] = 'good';
+                        if(isAdminUnlocked) renderAdminKeyList();
+                    }
+                    return data; // Return valid data
+
+                } catch (networkError) {
+                    // Network errors (offline) usually shouldn't rotate keys, but let's be safe
+                    if (useRotation) {
+                         adminKeyStatus[currentAdminKeyIndex] = 'bad'; // Assume key/connection issue
+                         currentAdminKeyIndex = (currentAdminKeyIndex + 1) % adminKeys.length;
+                         attempts++;
+                    } else {
+                        throw networkError;
+                    }
+                }
+            }
+            
+            throw new Error("Tất cả các Key đều lỗi hoặc hết hạn mức.");
+        }
+
 
         // --- STATE ---
         let isPlaying = false;
@@ -690,16 +941,9 @@
             const difficulty = type === 'audio' ? document.getElementById('genDifficulty').value : document.getElementById('readLevel').value;
             container.innerHTML = '<span class="text-xs text-gray-400">Đang tìm trend...</span>'; container.classList.remove('hidden');
             const prompt = `Generate 3 trending TOEIC/IELTS ${type === 'audio' ? 'speaking/listening' : 'reading'} topics for ${difficulty} level. Output ONLY JSON array: ["Topic 1", "Topic 2", "Topic 3"]`;
+            
             try {
-                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${getApiKey()}`, {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-                });
-                const data = await response.json();
-                
-                // Add error check
-                if (data.error) throw new Error(data.error.message);
-
+                const data = await getGeminiResponse({ contents: [{ parts: [{ text: prompt }] }] });
                 let text = data.candidates?.[0]?.content?.parts?.[0]?.text.replace(/```json/g, '').replace(/```/g, '').trim();
                 const topics = JSON.parse(text);
                 container.innerHTML = '';
@@ -709,7 +953,7 @@
                     chip.innerText = t; chip.onclick = () => { input.value = t; container.classList.add('hidden'); };
                     container.appendChild(chip);
                 });
-            } catch(e) { container.innerHTML = '<span class="text-xs text-red-400">Lỗi. Kiểm tra API Key.</span>'; }
+            } catch(e) { container.innerHTML = '<span class="text-xs text-red-400">Lỗi API.</span>'; console.error(e); }
         }
 
         // --- AUDIO GEN & TTS ---
@@ -735,15 +979,9 @@
                 showLoader("Đang viết kịch bản...");
                 try {
                     const prompt = `Write a speech on: "${topic}". Level: ${level}. Length: ~${duration*140} words. No intro tags.`;
-                    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${getApiKey()}`, {
-                        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-                    });
-                    const data = await res.json();
-                    
-                    if (data.error) throw new Error(data.error.message);
-
+                    const data = await getGeminiResponse({ contents: [{ parts: [{ text: prompt }] }] });
                     text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-                } catch(e) { hideLoader(); return alert("Lỗi: " + e.message + "\nKiểm tra lại API Key."); }
+                } catch(e) { hideLoader(); return alert("Lỗi: " + e.message); }
             } else text = document.getElementById('genText').value.trim();
             
             if(!text) return alert("Thiếu văn bản.");
@@ -767,15 +1005,13 @@
                     setTimeout(() => togglePlay(), 500);
                 };
                 reader.readAsDataURL(wavBlob);
-            } catch(e) { hideLoader(); alert("Lỗi TTS: " + e.message + "\nKiểm tra lại API Key."); }
+            } catch(e) { hideLoader(); alert("Lỗi TTS: " + e.message); }
         }
         async function callGeminiTTS(text) {
-            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${getApiKey()}`, {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ contents: [{ parts: [{ text: text }] }], generationConfig: { responseModalities: ["AUDIO"], speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: "Aoede" } } } } })
-            });
-            const data = await res.json();
-            if(data.error) throw new Error(data.error.message);
+            const data = await getGeminiResponse(
+                { contents: [{ parts: [{ text: text }] }], generationConfig: { responseModalities: ["AUDIO"], speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: "Aoede" } } } } },
+                "gemini-2.5-flash-preview-tts:generateContent"
+            );
             return data.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
         }
         function pcmToWav(base64PCM) {
@@ -896,14 +1132,7 @@
             const prompt = `Transcribe audio strictly into JSON segments. Format: [{"start":0.0,"end":2.5,"text":"Hello world"}]. Do not use markdown. Timestamps in seconds.`;
             
             try {
-                const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${getApiKey()}`, {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }, { inline_data: { mime_type: currentMimeType, data: currentAudioBase64 } }] }] })
-                });
-                const data = await resp.json();
-                
-                if (data.error) throw new Error(data.error.message);
-
+                const data = await getGeminiResponse({ contents: [{ parts: [{ text: prompt }, { inline_data: { mime_type: currentMimeType, data: currentAudioBase64 } }] }] });
                 let txt = data.candidates?.[0]?.content?.parts?.[0]?.text;
                 
                 let segments = [];
@@ -920,7 +1149,7 @@
                 targetText.value = segments.map(s => s.text).join(' ');
                 hasTranscript = true; 
                 showToast("Đã tạo Transcript!");
-            } catch(e) { alert("Lỗi: " + e.message + "\nKiểm tra lại API Key."); }
+            } catch(e) { alert("Lỗi: " + e.message); }
         }
 
         function renderRealtimeTranscript() {
@@ -999,13 +1228,7 @@
             const res = document.getElementById('aiResultDictation'); res.innerHTML = "AI is thinking..."; res.classList.remove('hidden');
             try {
                 const prompt = `Analyze dictation errors. Original: "${targetText.value}". User: "${userTyping.value}". Explain major mistakes in Vietnamese.`;
-                const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${getApiKey()}`, {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-                });
-                const data = await res.json();
-                
-                if(data.error) throw new Error(data.error.message);
-
+                const data = await getGeminiResponse({ contents: [{ parts: [{ text: prompt }] }] });
                 res.innerHTML = data.candidates?.[0]?.content?.parts?.[0]?.text.replace(/\n/g, '<br>') || "Lỗi.";
             } catch(e) { res.innerText = "Error: " + e.message; } finally { btn.disabled = false; btn.innerHTML = `<i class="fas fa-microscope mr-1"></i> Phân tích lỗi (AI)`; }
         }
@@ -1016,19 +1239,12 @@
             const btn = document.getElementById('btnGenQuiz'); btn.disabled = true; btn.innerText = "Đang tạo...";
             try {
                 const prompt = `Generate 5 multiple choice questions (JSON) based on audio. Format: [{"q":"...","options":["..."],"correct":0,"hint":"...","start":0,"end":5}]`;
-                const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${getApiKey()}`, {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }, { inline_data: { mime_type: currentMimeType, data: currentAudioBase64 } }] }] })
-                });
-                const data = await resp.json();
-
-                if (data.error) throw new Error(data.error.message);
-
+                const data = await getGeminiResponse({ contents: [{ parts: [{ text: prompt }, { inline_data: { mime_type: currentMimeType, data: currentAudioBase64 } }] }] });
                 let txt = data.candidates?.[0]?.content?.parts?.[0]?.text;
                 txt = txt.replace(/```json/g,'').replace(/```/g,'').trim();
                 quizData = JSON.parse(txt.match(/\[[\s\S]*\]/)[0]);
                 renderQuiz();
-            } catch(e) { alert("Lỗi: " + e.message + "\nKiểm tra lại API Key."); } finally { btn.disabled = false; btn.innerHTML = '<i class="fas fa-bolt mr-2 text-yellow-300"></i> Tạo câu hỏi ngay'; }
+            } catch(e) { alert("Lỗi: " + e.message); } finally { btn.disabled = false; btn.innerHTML = '<i class="fas fa-bolt mr-2 text-yellow-300"></i> Tạo câu hỏi ngay'; }
         }
 
         function renderQuiz() {
@@ -1072,13 +1288,7 @@
             }
             const btn = document.getElementById('btnGenReading'); btn.disabled=true; btn.innerHTML="Đang tạo...";
             try {
-                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${getApiKey()}`, {
-                    method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-                });
-                const data = await res.json();
-                
-                if (data.error) throw new Error(data.error.message);
-
+                const data = await getGeminiResponse({ contents: [{ parts: [{ text: prompt }] }] });
                 let txt = data.candidates?.[0]?.content?.parts?.[0]?.text.replace(/```json/g,'').replace(/```/g,'').trim();
                 const json = JSON.parse(txt.match(/\{[\s\S]*\}/)[0]);
                 
@@ -1090,7 +1300,7 @@
                 readingQuizData = json.questions;
                 renderReadingQuiz();
                 document.getElementById('readingModal').classList.add('hidden');
-            } catch(e) { alert("Lỗi: " + e.message + "\nKiểm tra lại API Key."); } finally { btn.disabled=false; btn.innerHTML="Tạo Đề Ngay"; }
+            } catch(e) { alert(e); } finally { btn.disabled=false; btn.innerHTML="Tạo Đề Ngay"; }
         }
         
         function renderReadingQuiz() {
@@ -1152,13 +1362,7 @@
             showLoader("Đang trích xuất từ vựng...");
             const prompt = `Extract 20 hard vocabulary words from this text for B2/C1 learners. Output CSV (Word, Meaning, Type). Text: ${passage.substring(0,2000)}`;
             try {
-                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${getApiKey()}`, {
-                    method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-                });
-                const data = await res.json();
-                
-                if (data.error) throw new Error(data.error.message);
-
+                const data = await getGeminiResponse({ contents: [{ parts: [{ text: prompt }] }] });
                 let csv = data.candidates?.[0]?.content?.parts?.[0]?.text.replace(/```csv/g, '').replace(/```/g, '').trim();
                 downloadCSV(csv, 'Vocabulary_List.csv');
                 showToast("Đã tải danh sách từ vựng!");
@@ -1176,32 +1380,20 @@
             const level = document.getElementById('writeLevel').value;
             const btn = document.getElementById('btnGenWriteTopic'); btn.disabled=true;
             try {
-                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${getApiKey()}`, {
-                    method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ contents: [{ parts: [{ text: `Generate random writing topic for ${level}. Text only.` }] }] })
-                });
-                const data = await res.json();
-                
-                if (data.error) throw new Error(data.error.message);
-
+                const data = await getGeminiResponse({ contents: [{ parts: [{ text: `Generate random writing topic for ${level}. Text only.` }] }] });
                 const topic = data.candidates?.[0]?.content?.parts?.[0]?.text;
                 const d = document.getElementById('writingTopicDisplay'); d.innerText=topic; d.classList.remove('hidden');
                 document.getElementById('btnGetHints').classList.remove('hidden');
-            } catch(e){alert("Lỗi: " + e.message + "\nKiểm tra lại API Key.");} finally { btn.disabled=false; }
+            } catch(e){alert(e);} finally { btn.disabled=false; }
         }
         
         async function getWritingHints() {
             const topic = document.getElementById('writingTopicDisplay').innerText || document.getElementById('writeManualInput').value;
             if(!topic) return alert("Chưa có topic.");
             try {
-                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${getApiKey()}`, {
-                    method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ contents: [{ parts: [{ text: `Hints/Vocab for topic: "${topic}". Vietnamese.` }] }] })
-                });
-                const data = await res.json();
-                
-                if (data.error) throw new Error(data.error.message);
-
+                const data = await getGeminiResponse({ contents: [{ parts: [{ text: `Hints/Vocab for topic: "${topic}". Vietnamese.` }] }] });
                 const h = document.getElementById('writingHints'); h.innerHTML=data.candidates?.[0]?.content?.parts?.[0]?.text.replace(/\n/g,'<br>'); h.classList.remove('hidden');
-            } catch(e){alert("Lỗi: " + e.message + "\nKiểm tra lại API Key.");}
+            } catch(e){alert(e);}
         }
 
         async function evaluateWriting() {
@@ -1210,16 +1402,10 @@
             if(!essay) return alert("Chưa có bài viết.");
             const btn = document.getElementById('btnEvalWriting'); btn.innerText = "Chấm điểm..."; btn.disabled = true;
             try {
-                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${getApiKey()}`, {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ parts: [{ text: `Evaluate essay. Topic: ${topic}. Essay: ${essay}. Vietnamese.` }] }] })
-                });
-                const data = await res.json();
-                
-                if (data.error) throw new Error(data.error.message);
-
+                const data = await getGeminiResponse({ contents: [{ parts: [{ text: `Evaluate essay. Topic: ${topic}. Essay: ${essay}. Vietnamese.` }] }] });
                 document.getElementById('feedbackContent').innerHTML = data.candidates?.[0]?.content?.parts?.[0]?.text.replace(/\n/g, '<br>');
                 document.getElementById('writingFeedback').classList.remove('hidden');
-            } catch(e) { alert("Lỗi: " + e.message + "\nKiểm tra lại API Key."); } finally { btn.innerText = "Chấm điểm & Sửa lỗi"; btn.disabled = false; }
+            } catch(e) { alert(e); } finally { btn.innerText = "Chấm điểm & Sửa lỗi"; btn.disabled = false; }
         }
 
         // --- EXPORT TO DEEP DRILL (UPDATED) ---
@@ -1252,14 +1438,7 @@
             `;
 
             try {
-                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${getApiKey()}`, {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-                });
-                const data = await res.json();
-
-                if (data.error) throw new Error(data.error.message);
-
+                const data = await getGeminiResponse({ contents: [{ parts: [{ text: prompt }] }] });
                 let csvContent = data.candidates?.[0]?.content?.parts?.[0]?.text;
                 csvContent = csvContent.replace(/```csv/g, '').replace(/```/g, '').trim();
                 
@@ -1268,7 +1447,7 @@
                 downloadCSV(csvContent, `DeepDrill_Export_${Date.now()}.csv`);
                 showToast("Đã tải xuống file CSV!");
             } catch(e) {
-                alert("Lỗi trích xuất: " + e.message + "\nKiểm tra lại API Key.");
+                alert("Lỗi trích xuất: " + e.message);
             } finally {
                 hideLoader();
             }
@@ -1291,18 +1470,11 @@
             const prompt = `Analyze text, extract 15 key words (${levelPrompt}). Output CSV (No Header): Word/Phrase, VN Meaning, Eng Def, IPA. Text: ${text.substring(0, 3000)}`;
             
             try {
-                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${getApiKey()}`, {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-                });
-                const data = await res.json();
-
-                if (data.error) throw new Error(data.error.message);
-
+                const data = await getGeminiResponse({ contents: [{ parts: [{ text: prompt }] }] });
                 let csvContent = data.candidates?.[0]?.content?.parts?.[0]?.text.replace(/```csv/g, '').replace(/```/g, '').trim();
                 downloadCSV(csvContent, `DeepDrill_Reading_${Date.now()}.csv`);
                 showToast("Đã tải xuống CSV!");
-            } catch(e) { alert("Lỗi: " + e.message + "\nKiểm tra lại API Key."); } finally { hideLoader(); }
+            } catch(e) { alert("Lỗi: " + e.message); } finally { hideLoader(); }
         }
 
         function downloadCSV(content, filename) {
@@ -1619,20 +1791,7 @@
             ]`;
 
             try {
-                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${getApiKey()}`, {
-                    method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-                });
-                const data = await res.json();
-                
-                // Add explicit error handling for API issues
-                if (data.error) {
-                    throw new Error(data.error.message);
-                }
-
-                if (!data.candidates || !data.candidates[0]) {
-                    throw new Error("Không nhận được phản hồi từ AI (Có thể do mạng hoặc Key).");
-                }
-
+                const data = await getGeminiResponse({ contents: [{ parts: [{ text: prompt }] }] });
                 let txt = data.candidates?.[0]?.content?.parts?.[0]?.text.replace(/```json/g, '').replace(/```/g, '').trim();
                 const json = JSON.parse(txt);
                 
