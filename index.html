@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>English Master: v24 Full Features</title>
+    <title>English Master: v25 Pro Export</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -199,7 +199,7 @@
     <!-- Header -->
     <div class="w-full max-w-7xl flex flex-col mb-2 flex-shrink-0">
         <div class="flex justify-between items-center mb-2">
-            <h1 class="text-xl sm:text-2xl font-bold text-gray-800"><i class="fas fa-layer-group mr-2 text-indigo-600"></i>English Master <span class="text-xs bg-indigo-600 text-white px-2 py-0.5 rounded-full ml-1">v24</span></h1>
+            <h1 class="text-xl sm:text-2xl font-bold text-gray-800"><i class="fas fa-layer-group mr-2 text-indigo-600"></i>English Master <span class="text-xs bg-indigo-600 text-white px-2 py-0.5 rounded-full ml-1">v25 Pro</span></h1>
             
             <div id="audioUploadContainer" class="flex space-x-2 items-center">
                 <button onclick="openAudioGenModal()" class="bg-pink-100 border border-pink-200 hover:bg-pink-200 text-pink-700 px-3 py-1.5 rounded-lg shadow-sm text-sm font-bold transition flex items-center">
@@ -301,8 +301,9 @@
                     <div class="flex items-center justify-between">
                         <span class="text-xs font-bold text-blue-700 mr-2">Xuất Deep Drill:</span>
                         <select id="exportLevelDictation" class="text-xs p-1 border border-blue-200 rounded flex-1 mr-2">
-                            <option value="all">Tất cả</option>
-                            <option value="b2">B2-C2</option>
+                            <option value="all">A1-C2 (Tất cả)</option>
+                            <option value="b1">B1-C2 (Trung cấp+)</option>
+                            <option value="b2">B2-C2 (Nâng cao)</option>
                         </select>
                         <button onclick="exportDeepDrill('targetText', 'exportLevelDictation')" class="bg-blue-600 text-white px-3 py-1 rounded text-xs font-bold hover:bg-blue-700 whitespace-nowrap"><i class="fas fa-file-export"></i> CSV</button>
                     </div>
@@ -397,7 +398,7 @@
                              <div class="flex hidden" id="deepRootRow"><span class="w-16 font-bold text-gray-400 text-xs pt-1 uppercase">Gốc:</span> <span id="deepRootDisplay" class="text-purple-600 font-medium"></span></div>
                         </div>
                         <div id="deepSynonymSection" class="hidden">
-                            <div class="flex items-center mb-2"><i class="fas fa-exchange-alt text-orange-500 mr-2 text-xs"></i><span class="text-xs font-bold text-orange-600 uppercase">Đồng nghĩa</span></div>
+                            <div class="flex items-center mb-2"><i class="fas fa-exchange-alt text-orange-500 mr-2 text-xs"></i><span class="text-xs font-bold text-orange-600 uppercase">Giải thích thêm</span></div>
                             <ul id="deepSynonymList" class="text-sm text-gray-700 space-y-1.5"></ul>
                         </div>
                     </div>
@@ -470,9 +471,9 @@
                      <div class="flex items-center space-x-2 w-full">
                         <span class="text-xs font-bold text-blue-700 whitespace-nowrap">Xuất từ vựng cho Deep Drill:</span>
                          <select id="exportLevelReading" class="text-xs p-1.5 border border-blue-200 rounded flex-1">
-                            <option value="all">Tất cả (A1-C2)</option>
-                            <option value="b2" selected>B2-C2 (Khó)</option>
-                            <option value="c1">C1-C2 (Rất khó)</option>
+                            <option value="all">A1-C2 (Tất cả)</option>
+                            <option value="b1">B1-C2 (Trung cấp+)</option>
+                            <option value="b2" selected>B2-C2 (Nâng cao)</option>
                         </select>
                         <button onclick="exportDeepDrillFromReading()" class="bg-blue-600 text-white px-3 py-1.5 rounded text-xs font-bold hover:bg-blue-700 whitespace-nowrap"><i class="fas fa-file-export mr-1"></i> Xuất CSV</button>
                     </div>
@@ -533,9 +534,9 @@
                          <div class="flex items-center space-x-2 w-full">
                              <span class="text-xs font-bold text-blue-700">Lấy từ vựng hay:</span>
                              <select id="exportLevelWriting" class="text-xs p-1.5 border border-blue-200 rounded flex-1">
-                                <option value="all">Tất cả</option>
-                                <option value="b2" selected>B2+ (Hay)</option>
-                                <option value="c1">C1+ (Siêu hay)</option>
+                                <option value="all">A1-C2 (Tất cả)</option>
+                                <option value="b1">B1-C2 (Trung cấp+)</option>
+                                <option value="b2" selected>B2-C2 (Nâng cao)</option>
                             </select>
                             <button onclick="exportDeepDrill('writingInput', 'exportLevelWriting')" class="bg-blue-600 text-white px-3 py-1.5 rounded text-xs font-bold hover:bg-blue-700 whitespace-nowrap"><i class="fas fa-file-export mr-1"></i> Xuất CSV</button>
                         </div>
@@ -1139,7 +1140,7 @@
             } catch(e) { alert(e); } finally { btn.innerText = "Chấm điểm & Sửa lỗi"; btn.disabled = false; }
         }
 
-        // --- EXPORT TO DEEP DRILL ---
+        // --- EXPORT TO DEEP DRILL (UPDATED) ---
         async function exportDeepDrill(sourceId, levelId) {
             const text = document.getElementById(sourceId).value;
             const level = document.getElementById(levelId).value;
@@ -1148,24 +1149,24 @@
             showLoader("Đang trích xuất từ vựng...");
             
             let levelPrompt = "CEFR B2-C2 (Advanced/Proficiency)";
-            if(level === 'all') levelPrompt = "CEFR A1-C2 (All important words)";
+            if(level === 'all') levelPrompt = "CEFR A1-C2 (All levels)";
+            if(level === 'b1') levelPrompt = "CEFR B1-C2 (Intermediate to Advanced)";
             if(level === 'b2') levelPrompt = "CEFR B2-C2 (Advanced)";
-            if(level === 'c1') levelPrompt = "CEFR C1-C2 (Proficiency only)";
             
             const prompt = `
-            Analyze this text and extract 10-20 key vocabulary items for level ${levelPrompt}.
+            Analyze this text and extract 15-20 key vocabulary items (single words, compound words, and common phrases/collocations) appropriate for ${levelPrompt}.
             Text: "${text.substring(0, 3000)}..."
             
             OUTPUT STRICT CSV FORMAT (No markdown blocks, No Header Row).
             Columns:
-            1. Word Family: Root word first, then variants on new lines within the cell (e.g., "happy\nhappiness\nhappily").
-            2. Common Collocations: Comma separated.
-            3. Synonyms: Comma separated.
-            4. Meaning: Shortest possible Vietnamese meaning (2-4 words).
-            5. IPA: IPA transcription of the root word.
+            1. Word/Phrase (e.g., "make a decision", "state-of-the-art", "resilience")
+            2. Vietnamese Meaning (Short, 2-5 words)
+            3. English Definition (Short, simple English explanation)
+            4. IPA (Phonetic transcription)
             
             Example Row:
-            "decide\ndecision\ndecisive","decide to do, make a decision","determine, choose","quyết định","/dɪˈsaɪd/"
+            "make up my mind","quyết định","to decide","meɪk ʌp maɪ maɪnd"
+            "resilience","khả năng phục hồi","capacity to recover quickly","rɪˈzɪliəns"
             `;
 
             try {
@@ -1199,9 +1200,10 @@
             showLoader("Đang trích xuất từ vựng...");
              let levelPrompt = "CEFR B2-C2";
             if(levelCode === 'all') levelPrompt = "CEFR A1-C2";
-            if(levelCode === 'c1') levelPrompt = "CEFR C1-C2";
+            if(levelCode === 'b1') levelPrompt = "CEFR B1-C2";
+            if(levelCode === 'b2') levelPrompt = "CEFR B2-C2";
             
-            const prompt = `Analyze text, extract 15 key words (${levelPrompt}). Output CSV (No Header): WordFamily(newlines), Collocations, Synonyms, Shortest Vietnamese Meaning (2-4 words), IPA. Text: ${text.substring(0, 3000)}`;
+            const prompt = `Analyze text, extract 15 key words (${levelPrompt}). Output CSV (No Header): Word/Phrase, VN Meaning, Eng Def, IPA. Text: ${text.substring(0, 3000)}`;
             
              try {
                 const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${getApiKey()}`, {
@@ -1319,36 +1321,24 @@
             
             const result = [];
             for(let r of rows) {
-                if(r.length < 4) continue;
-                result.push({ w: r[0], c: r[1], s: r[2], m: r[3], p: r[4]||"" });
+                if(r.length < 3) continue; // Allow at least 3 columns
+                result.push({ w: r[0], m: r[1], s: r[2], p: r[3]||"" });
             }
             return result;
         }
         function processDeepData(rawData) {
             deepSessionData = rawData.map(row => {
                 const challenges = [];
-                const meanings = row.m.split(',').map(s=>s.trim()).filter(s=>s);
-                const rootMeaning = meanings[0] || "";
-                
-                const lines = row.w.split('\n');
-                const rootWord = lines[0].replace(/\(.*\)/, '').trim();
-                if(rootWord) challenges.push({ text: rootWord, type: 'ROOT', meaning: rootMeaning, root: rootWord, ipa: row.p });
-                
-                for(let i=1; i<lines.length; i++) {
-                    const v = lines[i].replace(/\(.*\)/, '').trim();
-                    if(v) challenges.push({ text: v, type: 'VARIANT', meaning: rootMeaning, root: rootWord, ipa: "" });
-                }
-                
-                if(row.c) {
-                    const phrases = row.c.split(',').map(s=>s.trim()).filter(s=>s);
-                    const syns = row.s ? row.s.split(',').map(s=>s.trim()) : [];
-                    phrases.forEach((p, idx) => {
-                        let m = meanings[idx] || meanings.join(', ');
-                        challenges.push({ text: p, type: 'PHRASE', meaning: m, root: rootWord, synonym: syns[idx]||"", ipa: "" });
-                    });
-                }
-                
-                return challenges.length ? { challenges } : null;
+                // Simple mapping for flat list structure
+                challenges.push({ 
+                    text: row.w, 
+                    type: 'WORD', 
+                    meaning: row.m, 
+                    root: row.w, 
+                    ipa: row.p,
+                    engDef: row.s // New field for English Definition
+                });
+                return { challenges };
             }).filter(g => g);
             
             const saved = localStorage.getItem(`deep_prog_${deepFileName}`);
@@ -1376,7 +1366,7 @@
             
             deepIsRetrying = false;
             document.getElementById('deepGroupCounter').innerText = `${deepCurrentGroup+1}/${deepSessionData.length}`;
-            document.getElementById('deepJumpInput').value = deepCurrentGroup + 1; // Sync jump input
+            document.getElementById('deepJumpInput').value = deepCurrentGroup + 1; 
             document.getElementById('deepJumpInput').max = deepSessionData.length;
             
             document.getElementById('deepProgressBar').style.width = `${(deepCurrentGroup/deepSessionData.length)*100}%`;
@@ -1395,9 +1385,8 @@
             document.getElementById('btnDeepNext').classList.add('hidden');
             
             const badge = document.getElementById('deepTypeBadge');
-            if(chal.type === 'ROOT') { badge.className = "inline-block px-3 py-1 rounded-full text-xs font-bold bg-indigo-100 text-indigo-800"; badge.innerText = "TỪ GỐC"; }
-            else if(chal.type === 'VARIANT') { badge.className = "inline-block px-3 py-1 rounded-full text-xs font-bold bg-purple-100 text-purple-800"; badge.innerText = "BIẾN THỂ"; }
-            else { badge.className = "inline-block px-3 py-1 rounded-full text-xs font-bold bg-green-100 text-green-800"; badge.innerText = "CỤM TỪ"; }
+            badge.innerText = "TỪ VỰNG";
+            badge.className = "inline-block px-3 py-1 rounded-full text-xs font-bold bg-indigo-100 text-indigo-800";
             
             renderDeepDots(group.challenges.length, deepCurrentChallenge);
             setTimeout(() => playDeepAudio(), 500);
@@ -1471,14 +1460,11 @@
         function showDeepFeedback(chal) {
             const fb = document.getElementById('deepFeedbackArea'); fb.classList.remove('hidden');
             document.getElementById('deepMeaningDisplay').innerText = chal.meaning;
-            if(chal.type !== 'ROOT') {
-                document.getElementById('deepRootRow').classList.remove('hidden');
-                document.getElementById('deepRootDisplay').innerText = chal.root;
-            } else document.getElementById('deepRootRow').classList.add('hidden');
+            document.getElementById('deepRootRow').classList.add('hidden');
             
-            if(chal.synonym) {
+            if(chal.engDef) {
                 document.getElementById('deepSynonymSection').classList.remove('hidden');
-                document.getElementById('deepSynonymList').innerHTML = `<li class="flex items-center space-x-2"><button onclick="new SpeechSynthesisUtterance('${chal.synonym}').lang='en-US';window.speechSynthesis.speak(new SpeechSynthesisUtterance('${chal.synonym}'))" class="w-6 h-6 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center text-xs"><i class="fas fa-volume-up"></i></button><span class="font-bold">${chal.synonym}</span></li>`;
+                document.getElementById('deepSynonymList').innerHTML = `<li class="text-sm italic text-gray-600">${chal.engDef}</li>`;
             } else document.getElementById('deepSynonymSection').classList.add('hidden');
         }
         function nextDeepChallenge() {
@@ -1499,7 +1485,6 @@
         function toggleDeepHint() {
             const chal = deepSessionData[deepCurrentGroup].challenges[deepCurrentChallenge];
             document.getElementById('deepHintArea').classList.toggle('hidden');
-            // UPDATED: Show IPA if available, else standard hint
             if (chal.ipa) {
                 document.getElementById('deepHintText').innerText = `IPA: ${chal.ipa}`;
             } else {
@@ -1515,7 +1500,7 @@
             if (idx >= deepSessionData.length) idx = deepSessionData.length - 1;
             
             deepCurrentGroup = idx;
-            deepCurrentChallenge = 0; // Always start at first word of group
+            deepCurrentChallenge = 0; 
             loadDeepChallenge();
         }
 
