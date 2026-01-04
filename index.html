@@ -315,12 +315,25 @@
                     </button>
                     <button onclick="forward(5)" class="text-gray-400 hover:text-white transition"><i class="fas fa-redo-alt"></i> 5s</button>
                 </div>
-                <div class="flex items-center space-x-2">
-                    <select id="speedSelect" onchange="changeSpeed()" class="bg-gray-800 text-xs text-white border border-gray-700 rounded px-1 py-0.5 outline-none">
-                        <option value="0.75">0.75x</option>
-                        <option value="1" selected>1.0x</option>
-                        <option value="1.25">1.25x</option>
-                    </select>
+                
+                <!-- NEW: Right side controls container -->
+                <div class="flex items-center">
+                    <!-- Loop Toggle -->
+                    <div class="flex items-center mr-4 border-r border-gray-600 pr-4">
+                        <span class="text-[10px] uppercase font-bold text-gray-400 mr-2">Loop</span>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="loopToggle" class="sr-only peer" onchange="toggleLoop()">
+                            <div class="w-7 h-4 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-indigo-500"></div>
+                        </label>
+                    </div>
+
+                    <div class="flex items-center space-x-2">
+                        <select id="speedSelect" onchange="changeSpeed()" class="bg-gray-800 text-xs text-white border border-gray-700 rounded px-1 py-0.5 outline-none">
+                            <option value="0.75">0.75x</option>
+                            <option value="1" selected>1.0x</option>
+                            <option value="1.25">1.25x</option>
+                        </select>
+                    </div>
                 </div>
             </div>
         </div>
@@ -333,7 +346,12 @@
                     <h3 class="text-xs font-bold text-gray-500 uppercase flex items-center">
                         <i class="fas fa-stream mr-2 text-indigo-500"></i> Transcript Realtime
                     </h3>
-                    <div class="flex space-x-1">
+                    <div class="flex space-x-1 items-center">
+                         <!-- NEW: EN/VI Toggle -->
+                        <div class="flex bg-gray-200 rounded p-0.5 mr-2">
+                             <button onclick="toggleTranscriptLang('en')" id="btnTransEn" class="text-[10px] px-2 py-0.5 rounded bg-white text-gray-800 font-bold shadow-sm transition">EN</button>
+                             <button onclick="toggleTranscriptLang('vi')" id="btnTransVi" class="text-[10px] px-2 py-0.5 rounded text-gray-500 hover:text-gray-700 transition">VI</button>
+                        </div>
                         <button onclick="generateTranscriptFromAI()" class="text-xs bg-indigo-100 hover:bg-indigo-200 text-indigo-700 px-2 py-1 rounded transition" title="Tạo Transcript AI">
                             <i class="fas fa-magic mr-1"></i> Tạo AI
                         </button>
@@ -349,6 +367,8 @@
                         <p class="text-xs mt-1">Bấm <strong>"Tạo AI"</strong> hoặc nhập thủ công rồi Lưu để đồng bộ.</p>
                     </div>
                     <div id="transcriptContent" class="space-y-4"></div>
+                    <!-- NEW: Vietnamese Content (Hidden by default) -->
+                    <div id="transcriptTranslation" class="space-y-4 hidden text-indigo-800"></div>
                 </div>
                 <div class="mt-3 bg-blue-50 p-2 rounded border border-blue-100 flex-shrink-0">
                     <div class="flex items-center justify-between">
@@ -642,25 +662,6 @@
         <!-- VIEW 7: GRAMMAR -->
         <div id="viewGrammar" class="hidden flex-1 flex flex-col md:flex-row overflow-hidden bg-red-50 relative">
             
-            <!-- NEW: Vocab Enrichment Tool (Floating) -->
-            <div class="absolute top-4 right-4 z-30 bg-white p-3 rounded-lg shadow-lg border border-red-200 w-64 text-xs">
-                <div class="flex justify-between items-center mb-2 border-b border-red-100 pb-1">
-                    <h4 class="font-bold text-red-800"><i class="fas fa-wand-magic-sparkles mr-1 text-yellow-500"></i>Tạo CSV Từ vựng</h4>
-                    <i class="fas fa-info-circle text-gray-400 cursor-help" title="Upload danh sách từ (1 cột) -> AI thêm nghĩa & IPA -> Tải về CSV 4 cột để dùng."></i>
-                </div>
-                <div class="space-y-2">
-                    <div class="relative">
-                         <input type="file" id="vocabToolInput" accept=".csv,.txt" class="hidden" onchange="handleVocabToolUpload(event)">
-                        <label for="vocabToolInput" class="cursor-pointer block w-full text-center bg-gray-50 border border-dashed border-gray-300 rounded py-2 text-gray-600 hover:bg-gray-100 transition">
-                            <span id="vocabToolFileName">Chọn file (txt/csv)</span>
-                        </label>
-                    </div>
-                    <button onclick="generateEnrichedCSV()" id="btnVocabToolAction" class="w-full bg-red-600 hover:bg-red-700 text-white py-1.5 rounded font-bold shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">
-                        Xử lý & Tải về
-                    </button>
-                </div>
-            </div>
-
             <!-- Sidebar: Grammar Tree -->
             <div class="w-full md:w-80 lg:w-96 bg-white border-r border-red-100 flex flex-col flex-shrink-0 h-full">
                 <div class="p-4 border-b border-red-100 flex justify-between items-center bg-red-50">
@@ -671,6 +672,25 @@
                     <!-- Tree content injected by JS -->
                 </div>
                 
+                <!-- NEW LOCATION: Vocab Enrichment Tool (Fixed in Sidebar) -->
+                <div class="p-3 border-t border-red-100 bg-yellow-50">
+                    <div class="flex justify-between items-center mb-2 pb-1 border-b border-yellow-200">
+                         <h4 class="font-bold text-red-800 text-xs"><i class="fas fa-wand-magic-sparkles mr-1 text-yellow-600"></i>Tạo CSV Từ vựng</h4>
+                         <i class="fas fa-info-circle text-gray-400 cursor-help text-[10px]" title="Upload danh sách từ (1 cột) -> AI thêm nghĩa & IPA -> Tải về CSV 4 cột để dùng."></i>
+                    </div>
+                    <div class="space-y-2">
+                        <div class="relative">
+                             <input type="file" id="vocabToolInput" accept=".csv,.txt" class="hidden" onchange="handleVocabToolUpload(event)">
+                            <label for="vocabToolInput" class="cursor-pointer block w-full text-center bg-white border border-dashed border-gray-300 rounded py-1.5 text-[10px] text-gray-600 hover:bg-gray-50 transition">
+                                <span id="vocabToolFileName">Chọn file (txt/csv)</span>
+                            </label>
+                        </div>
+                        <button onclick="generateEnrichedCSV()" id="btnVocabToolAction" class="w-full bg-red-600 hover:bg-red-700 text-white py-1.5 rounded font-bold shadow-sm disabled:opacity-50 disabled:cursor-not-allowed text-[10px]">
+                            Xử lý & Tải về
+                        </button>
+                    </div>
+                </div>
+
                 <!-- Import Vocab Section -->
                 <div class="p-3 border-t border-red-100 bg-red-50">
                     <div class="flex items-center justify-between mb-2">
@@ -755,7 +775,7 @@
         let adminKeyIndex = 0;
         let adminKeyStatus = new Array(ADMIN_KEYS.length).fill('active'); // 'active', 'exhausted'
 
-        // --- GRAMMAR TREE DATA (UPDATED NAMES) ---
+        // --- GRAMMAR TREE DATA (UPDATED) ---
         const GRAMMAR_TREE = [
             {
                 id: 'p1', title: 'Phần 1: Từ loại (Parts of Speech)', color: 'text-green-800', bg: 'bg-green-100',
@@ -797,6 +817,15 @@
                     { id: 'subj', title: 'Câu giả định (Subjunctive)', desc: 'Wish, Would rather, It\'s time...' },
                     { id: 'phras', title: 'Cụm động từ (Phrasal Verbs)', desc: 'Two/Three-part verbs' },
                     { id: 'idiom', title: 'Thành ngữ & Collocations', desc: 'Fixed expressions' }
+                ]
+            },
+             // NEW PART 5
+            {
+                id: 'p5', title: 'Phần 5: Động từ Bất quy tắc (Irregular Verbs)', color: 'text-orange-800', bg: 'bg-orange-100',
+                children: [
+                    { id: 'irr_all', title: '360 Động từ bất quy tắc', desc: 'Luyện tập V1, V2, V3 & Nghĩa' },
+                    { id: 'irr_common', title: '100 Động từ phổ biến', desc: 'Các từ hay gặp nhất' },
+                    { id: 'irr_groups', title: 'Nhóm theo quy tắc', desc: 'AAA, ABA, ABB...' }
                 ]
             }
         ];
@@ -971,6 +1000,7 @@
 
         // --- STATE ---
         let isPlaying = false;
+        let isLooping = false; // New Loop State
         let audioDuration = 0;
         let hasTranscript = false;
         let currentFile = null;
@@ -1140,6 +1170,10 @@
             
             transcriptContent.innerHTML = '';
             transcriptPlaceholder.classList.remove('hidden');
+            
+            // Clear VI translation
+            document.getElementById('transcriptTranslation').innerHTML = '';
+            document.getElementById('transcriptTranslation').classList.add('hidden');
             
             quizContent.classList.add('hidden'); document.getElementById('questionsList').innerHTML = '';
             audio.src = src; fileNameDisplay.innerText = name; isPlaying = false; updatePlayButton(); progressBar.style.width = '0%';
@@ -1534,9 +1568,21 @@
         function togglePlay() { if(!audio.src) return alert("Chưa có file audio."); if(isPlaying) audio.pause(); else audio.play(); isPlaying = !isPlaying; updatePlayButton(); }
         function updatePlayButton() { playBtn.innerHTML = isPlaying ? '<i class="fas fa-pause"></i>' : '<i class="fas fa-play ml-1"></i>'; }
         
+        // --- UPDATED PROGRESS & AUDIO ENDED ---
         function updateProgress() {
-            const cur = audio.currentTime; progressBar.style.width = `${(cur/audioDuration)*100}%`; seekSlider.value = Math.floor(cur); currentTimeEl.innerText = formatTime(cur);
-            if(segmentEnd !== null && cur >= segmentEnd) { audio.pause(); isPlaying = false; updatePlayButton(); segmentEnd = null; hintSegment.style.opacity = '0'; }
+            const cur = audio.currentTime; 
+            progressBar.style.width = `${(cur/audioDuration)*100}%`; 
+            seekSlider.value = Math.floor(cur); 
+            currentTimeEl.innerText = formatTime(cur);
+            
+            // Check for segment loop or end
+            if(segmentEnd !== null && cur >= segmentEnd) { 
+                audio.pause(); 
+                isPlaying = false; 
+                updatePlayButton(); 
+                segmentEnd = null; 
+                hintSegment.style.opacity = '0'; 
+            }
             
             if(transcriptData.length > 0) {
                 transcriptData.forEach((seg, i) => {
@@ -1550,6 +1596,7 @@
                 });
             }
         }
+        
         function formatTime(s) { return `${Math.floor(s/60)}:${Math.floor(s%60)<10?'0':''}${Math.floor(s%60)}`; }
         function changeSpeed() { audio.playbackRate = parseFloat(document.getElementById('speedSelect').value); }
         function rewind(s) { audio.currentTime = Math.max(0, audio.currentTime-s); }
@@ -1562,13 +1609,55 @@
             hintSegment.style.left = `${(start/audioDuration)*100}%`; hintSegment.style.width = `${((safeEnd-start)/audioDuration)*100}%`; hintSegment.style.opacity = '0.7';
             audio.currentTime = start; segmentEnd = safeEnd; audio.play(); isPlaying = true; updatePlayButton();
         }
+        
+        // --- NEW: LOOP FUNCTIONALITY ---
+        function toggleLoop() {
+             isLooping = document.getElementById('loopToggle').checked;
+             showToast(isLooping ? "Đã bật tự động lặp lại" : "Đã tắt lặp lại");
+        }
 
-        // --- DICTATION & REALTIME TRANSCRIPT ---
+        function audioEnded() {
+            if (isLooping) {
+                audio.currentTime = 0;
+                audio.play();
+            } else {
+                isPlaying = false;
+                updatePlayButton();
+            }
+        }
+
+        // --- DICTATION & REALTIME TRANSCRIPT (UPDATED) ---
+        
+        // NEW: Toggle Transcript Language
+        function toggleTranscriptLang(lang) {
+            const contentEn = document.getElementById('transcriptContent');
+            const contentVi = document.getElementById('transcriptTranslation');
+            const btnEn = document.getElementById('btnTransEn');
+            const btnVi = document.getElementById('btnTransVi');
+
+            if (lang === 'en') {
+                contentEn.classList.remove('hidden');
+                contentVi.classList.add('hidden');
+                
+                btnEn.className = "text-[10px] px-2 py-0.5 rounded bg-white text-gray-800 font-bold shadow-sm transition";
+                btnVi.className = "text-[10px] px-2 py-0.5 rounded text-gray-500 hover:text-gray-700 transition";
+            } else {
+                contentEn.classList.add('hidden');
+                contentVi.classList.remove('hidden');
+                
+                btnVi.className = "text-[10px] px-2 py-0.5 rounded bg-white text-gray-800 font-bold shadow-sm transition";
+                btnEn.className = "text-[10px] px-2 py-0.5 rounded text-gray-500 hover:text-gray-700 transition";
+            }
+        }
+
         async function generateTranscriptFromAI() {
             if(!currentAudioBase64) return alert("Chưa có audio.");
-            showToast("Đang tạo Transcript & Timestamps...");
+            showToast("Đang tạo Transcript & Dịch nghĩa...");
             
-            const prompt = `Transcribe audio strictly into JSON segments. Format: [{"start":0.0,"end":2.5,"text":"Hello world"}]. Do not use markdown. Timestamps in seconds.`;
+            // UPDATED PROMPT: Request Vietnamese Translation
+            const prompt = `Transcribe audio strictly into JSON segments. Include Vietnamese translation for each segment. 
+            Format: [{"start":0.0,"end":2.5,"text":"Hello world", "vi": "Xin chào thế giới"}]. 
+            Do not use markdown. Timestamps in seconds.`;
             
             try {
                 const data = await callGeminiAPI('gemini-2.5-flash-preview-09-2025', {
@@ -1581,34 +1670,51 @@
                     segments = JSON.parse(txt);
                 } catch (parseErr) {
                     console.warn("JSON Parse failed, fallback");
-                    segments = [{start: 0, end: audioDuration, text: txt}];
+                    segments = [{start: 0, end: audioDuration, text: txt, vi: "Không thể dịch tự động."}];
                 }
                 
                 transcriptData = segments;
                 renderRealtimeTranscript();
                 targetText.value = segments.map(s => s.text).join(' ');
                 hasTranscript = true; 
-                showToast("Đã tạo Transcript!");
+                showToast("Đã tạo Transcript + Dịch nghĩa!");
             } catch(e) { alert("Lỗi Transcribe: " + e.message); }
         }
 
         function renderRealtimeTranscript() {
             transcriptPlaceholder.classList.add('hidden');
-            transcriptContent.innerHTML = '';
+            const contentEn = document.getElementById('transcriptContent');
+            const contentVi = document.getElementById('transcriptTranslation');
+            
+            contentEn.innerHTML = '';
+            contentVi.innerHTML = '';
             
             transcriptData.forEach((seg, index) => {
-                const span = document.createElement('span');
-                span.id = `ts_${index}`;
-                span.className = 't-segment mr-1';
-                span.innerText = seg.text;
-                span.title = `Jump to ${formatTime(seg.start)}`;
-                span.onclick = () => {
+                // English Segment
+                const spanEn = document.createElement('span');
+                spanEn.id = `ts_${index}`;
+                spanEn.className = 't-segment mr-1';
+                spanEn.innerText = seg.text;
+                spanEn.title = `Jump to ${formatTime(seg.start)}`;
+                spanEn.onclick = () => {
                     audio.currentTime = seg.start;
                     audio.play();
                     isPlaying = true;
                     updatePlayButton();
                 };
-                transcriptContent.appendChild(span);
+                contentEn.appendChild(spanEn);
+
+                // Vietnamese Segment (Block style)
+                const divVi = document.createElement('div');
+                divVi.className = 'mb-2 p-1 border-l-2 border-indigo-200 pl-2 hover:bg-indigo-50 transition cursor-pointer';
+                divVi.innerHTML = `<span class="text-[10px] font-mono text-gray-400 mr-2">${formatTime(seg.start)}</span>${seg.vi || "..."}`;
+                divVi.onclick = () => {
+                     audio.currentTime = seg.start;
+                    audio.play();
+                    isPlaying = true;
+                    updatePlayButton();
+                };
+                contentVi.appendChild(divVi);
             });
         }
 
@@ -1623,7 +1729,8 @@
                 transcriptData = sentences.map((s, i) => ({
                     start: i * avgDur,
                     end: (i + 1) * avgDur,
-                    text: s.trim()
+                    text: s.trim(),
+                    vi: "(Thủ công - Chưa dịch)" // Placeholder for manual save
                 }));
                 
                 renderRealtimeTranscript();
@@ -2024,7 +2131,7 @@
                     type: 'WORD', 
                     meaning: row.m, 
                     root: row.w, 
-                    ipa: row.p,
+                    ipa: row.p, 
                     engDef: row.s 
                 });
                 return { challenges };
