@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>English Master: v27 Pro (Grammar & Vocab)</title>
+    <title>English Master: v27 Pro (Vocab & Grammar)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -57,6 +57,24 @@
         .grammar-tree-item { margin-left: 1rem; padding: 2px 0; font-size: 0.9em; color: #4b5563; }
         .grammar-section-header { cursor: pointer; user-select: none; }
         .grammar-checkbox { accent-color: #991b1b; } /* Red-800 for grammar theme */
+
+        /* Vocab Tooltip */
+        .vocab-option:hover::after {
+            content: attr(data-meaning);
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #333;
+            color: #fff;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 10px;
+            white-space: nowrap;
+            z-index: 10;
+            opacity: 0.9;
+            pointer-events: none;
+        }
     </style>
 </head>
 <body class="h-screen flex flex-col items-center p-2 sm:p-4 bg-gradient-to-br from-blue-50 to-indigo-50 overflow-hidden" onload="initApp()">
@@ -288,6 +306,9 @@
             <button onclick="switchTab('grammar')" id="tabGrammar" class="tab-inactive px-4 py-2 transition whitespace-nowrap text-sm sm:text-base text-red-800">
                 <i class="fas fa-list-check mr-1"></i> Grammar
             </button>
+            <button onclick="switchTab('vocab')" id="tabVocab" class="tab-inactive px-4 py-2 transition whitespace-nowrap text-sm sm:text-base text-cyan-700">
+                <i class="fas fa-shapes mr-1"></i> Vocabulary
+            </button>
         </div>
     </div>
 
@@ -316,7 +337,6 @@
                     <button onclick="forward(5)" class="text-gray-400 hover:text-white transition"><i class="fas fa-redo-alt"></i> 5s</button>
                 </div>
                 
-                <!-- NEW: Right side controls container -->
                 <div class="flex items-center">
                     <!-- Loop Toggle -->
                     <div class="flex items-center mr-4 border-r border-gray-600 pr-4">
@@ -347,7 +367,6 @@
                         <i class="fas fa-stream mr-2 text-indigo-500"></i> Transcript Realtime
                     </h3>
                     <div class="flex space-x-1 items-center">
-                         <!-- NEW: EN/VI Toggle -->
                         <div class="flex bg-gray-200 rounded p-0.5 mr-2">
                              <button onclick="toggleTranscriptLang('en')" id="btnTransEn" class="text-[10px] px-2 py-0.5 rounded bg-white text-gray-800 font-bold shadow-sm transition">EN</button>
                              <button onclick="toggleTranscriptLang('vi')" id="btnTransVi" class="text-[10px] px-2 py-0.5 rounded text-gray-500 hover:text-gray-700 transition">VI</button>
@@ -367,7 +386,6 @@
                         <p class="text-xs mt-1">Bấm <strong>"Tạo AI"</strong> hoặc nhập thủ công rồi Lưu để đồng bộ.</p>
                     </div>
                     <div id="transcriptContent" class="space-y-4"></div>
-                    <!-- NEW: Vietnamese Content (Hidden by default) -->
                     <div id="transcriptTranslation" class="space-y-4 hidden text-indigo-800"></div>
                 </div>
                 <div class="mt-3 bg-blue-50 p-2 rounded border border-blue-100 flex-shrink-0">
@@ -755,6 +773,84 @@
             </div>
         </div>
 
+        <!-- VIEW 8: VOCABULARY -->
+        <div id="viewVocab" class="hidden flex-1 flex flex-col md:flex-row overflow-hidden bg-cyan-50 relative">
+            
+            <!-- Sidebar: Config -->
+            <div class="w-full md:w-80 lg:w-96 bg-white border-r border-cyan-100 flex flex-col flex-shrink-0 h-full">
+                <div class="p-4 border-b border-cyan-100 bg-cyan-50">
+                    <h3 class="font-bold text-cyan-900 mb-2"><i class="fas fa-shapes mr-2"></i>Phòng Luyện Từ Vựng</h3>
+                    
+                    <!-- TOEIC / IELTS Switch -->
+                    <div class="flex bg-white rounded p-1 border border-cyan-200 mb-4">
+                        <button onclick="switchVocabType('TOEIC')" id="btnVocabToeic" class="flex-1 py-1.5 rounded text-xs font-bold bg-cyan-600 text-white shadow transition">TOEIC (Business)</button>
+                        <button onclick="switchVocabType('IELTS')" id="btnVocabIelts" class="flex-1 py-1.5 rounded text-xs font-bold text-gray-500 hover:bg-gray-50 transition">IELTS (Academic)</button>
+                    </div>
+
+                    <!-- Topic Dropdown -->
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Chủ đề:</label>
+                    <select id="vocabTopicSelect" class="w-full p-2 border border-gray-300 rounded mb-3 text-sm bg-white focus:outline-none focus:border-cyan-500">
+                        <!-- Populated via JS -->
+                    </select>
+
+                    <!-- Level -->
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Hạng từ vựng:</label>
+                    <select id="vocabLevel" class="w-full p-2 border border-gray-300 rounded mb-3 text-sm bg-white">
+                        <option value="A2">A2 (Sơ cấp)</option>
+                        <option value="B1">B1 (Trung cấp)</option>
+                        <option value="B2">B2 (Trung cao cấp)</option>
+                        <option value="C1">C1 (Cao cấp)</option>
+                        <option value="C2">C2 (Thành thạo)</option>
+                    </select>
+
+                    <button onclick="generateVocabQuiz()" id="btnGenVocab" class="w-full bg-cyan-700 hover:bg-cyan-800 text-white py-2.5 rounded font-bold shadow-md transition text-sm flex items-center justify-center">
+                        <i class="fas fa-bolt mr-2 text-yellow-300"></i> Tạo Đề (15 Câu)
+                    </button>
+                </div>
+
+                <div class="flex-1 bg-white p-4">
+                    <div class="text-xs text-gray-500 italic mb-4">
+                        <i class="fas fa-info-circle mr-1"></i> Tính năng:
+                        <ul class="list-disc ml-4 mt-1 space-y-1">
+                            <li>15 câu hỏi trắc nghiệm</li>
+                            <li>Tooltip hiển thị nghĩa khi di chuột vào đáp án</li>
+                            <li>Hỗ trợ xuất Excel/CSV</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Content: Quiz -->
+            <div class="flex-1 flex flex-col h-full overflow-hidden bg-gray-50 relative">
+                <!-- Placeholder -->
+                <div id="vocabEmptyState" class="absolute inset-0 flex flex-col items-center justify-center p-8 text-center">
+                    <div class="w-24 h-24 bg-cyan-100 rounded-full flex items-center justify-center mb-4 border-4 border-white shadow-sm">
+                        <i class="fas fa-cube text-4xl text-cyan-600"></i>
+                    </div>
+                    <h2 class="text-xl font-bold text-gray-700 mb-2">Chọn Chủ Đề Để Bắt Đầu</h2>
+                    <p class="text-gray-500 max-w-md text-sm mb-4">Hệ thống sẽ tạo 15 câu hỏi trắc nghiệm từ vựng theo chuẩn TOEIC hoặc IELTS.</p>
+                </div>
+
+                <!-- Quiz List -->
+                <div id="vocabQuizContent" class="hidden flex-1 overflow-y-auto p-4 md:p-8 space-y-6 pb-20"></div>
+
+                <!-- Action Bar -->
+                <div id="vocabActionBar" class="hidden p-4 bg-white border-t border-gray-200 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] z-20 flex justify-between items-center">
+                    <div class="text-sm font-bold text-gray-700">
+                        Kết quả: <span id="vocabScore" class="text-cyan-600 text-lg">--/15</span>
+                    </div>
+                    <div class="flex space-x-2">
+                        <button onclick="exportVocabQuiz()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded font-bold shadow transition text-sm">
+                            <i class="fas fa-file-excel mr-1"></i> Xuất CSV
+                        </button>
+                        <button onclick="checkVocabAnswers()" id="btnCheckVocab" class="bg-cyan-700 hover:bg-cyan-800 text-white px-6 py-2 rounded font-bold shadow transition">
+                            Nộp Bài
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </div>
 
     <!-- Hidden Audio Element -->
@@ -775,7 +871,7 @@
         let adminKeyIndex = 0;
         let adminKeyStatus = new Array(ADMIN_KEYS.length).fill('active'); // 'active', 'exhausted'
 
-        // --- GRAMMAR TREE DATA (UPDATED) ---
+        // --- GRAMMAR TREE DATA ---
         const GRAMMAR_TREE = [
             {
                 id: 'p1', title: 'Phần 1: Từ loại (Parts of Speech)', color: 'text-green-800', bg: 'bg-green-100',
@@ -819,7 +915,6 @@
                     { id: 'idiom', title: 'Thành ngữ & Collocations', desc: 'Fixed expressions' }
                 ]
             },
-             // NEW PART 5
             {
                 id: 'p5', title: 'Phần 5: Động từ Bất quy tắc (Irregular Verbs)', color: 'text-orange-800', bg: 'bg-orange-100',
                 children: [
@@ -829,16 +924,40 @@
                 ]
             }
         ];
+
+        // --- VOCABULARY TOPIC DATA ---
+        const VOCAB_TOPICS = {
+            "TOEIC": [
+                { id: "v_job", name: "Công việc & Sự nghiệp (Tuyển dụng, Hợp đồng, Lương...)" },
+                { id: "v_finance", name: "Kinh tế & Tài chính (Ngân hàng, Thuế, Kế toán...)" },
+                { id: "v_office_tech", name: "Công nghệ Văn phòng (Thiết bị, Phần mềm, Bảo trì...)" },
+                { id: "v_infrastructure", name: "Cơ sở vật chất (Xây dựng, Điện nước, Văn phòng...)" },
+                { id: "v_training", name: "Đào tạo & Kỹ năng (Hội thảo, Chứng chỉ...)" },
+                { id: "v_insurance", name: "Sức khỏe & An toàn (Bảo hiểm, Nghỉ phép...)" },
+                { id: "v_service", name: "Dịch vụ & Du lịch (Đặt phòng, Khiếu nại, Thực đơn...)" }
+            ],
+            "IELTS": [
+                { id: "v_labor", name: "Thị trường Lao động (Thất nghiệp, Tự động hóa...)" },
+                { id: "v_global_eco", name: "Kinh tế Toàn cầu (Toàn cầu hóa, Thương mại...)" },
+                { id: "v_future_tech", name: "Công nghệ Tương lai (AI, Không gian, Gen...)" },
+                { id: "v_environment", name: "Môi trường & Khí hậu (Biến đổi, Năng lượng...)" },
+                { id: "v_education", name: "Hệ thống Giáo dục (Đại học, Học phí...)" },
+                { id: "v_public_health", name: "Y tế Cộng đồng (Dịch bệnh, Dinh dưỡng...)" },
+                { id: "v_culture", name: "Văn hóa & Xã hội (Di sản, Du lịch đại chúng...)" }
+            ]
+        };
         
         let grammarQuizData = [];
-        let failedGrammarTopics = new Set(); // To track weak points
-        let grammarVocabList = []; // Store imported vocabulary
-        let rawVocabToolData = ""; // Store data for the tool
+        let vocabQuizData = []; // Store Vocab Questions
+        let failedGrammarTopics = new Set(); 
+        let grammarVocabList = []; 
+        let rawVocabToolData = ""; 
+        let currentVocabType = "TOEIC";
 
         // --- APP INIT ---
         function initApp() {
             renderGrammarTree();
-            // Load key if exists
+            renderVocabTopics(); // Init Vocab UI
             updateApiKeyUI();
         }
 
@@ -920,7 +1039,6 @@
             document.getElementById('currentKeyInfo').innerText = `Using Key #${adminKeyIndex + 1}...`;
         }
 
-        // --- NEW HELPER: SAFE TEXT EXTRACTION (FIX "UNDEFINED" ERROR) ---
         function getSafeText(data) {
             if (!data.candidates || !data.candidates[0] || !data.candidates[0].content || !data.candidates[0].content.parts || !data.candidates[0].content.parts[0]) {
                 throw new Error("AI không trả về nội dung (Có thể bị chặn Safety Filter hoặc hết Quota).");
@@ -928,7 +1046,6 @@
             return data.candidates[0].content.parts[0].text;
         }
 
-        // --- CENTRAL API CALLER (AUTO ROTATION) ---
         async function callGeminiAPI(modelName, payload) {
             let attempts = 0;
             const isUserAdmin = localStorage.getItem("USER_GEMINI_API_KEY") === "ADMIN_MODE";
@@ -946,28 +1063,20 @@
                     });
                     
                     const data = await res.json();
-                    
-                    // Specific Gemini API Error Handling
                     if (data.error) {
                         const code = data.error.code;
                         const msg = data.error.message.toLowerCase();
-                        
-                        // Check for Quota/Rate Limit (429) or Permission (403/400 often invalid key)
                         if (isUserAdmin && (code === 429 || msg.includes('quota') || msg.includes('limit') || code === 403)) {
                             console.warn(`Key #${adminKeyIndex+1} exhausted. Rotating...`);
                             markKeyExhausted(adminKeyIndex);
                             rotateAdminKey();
                             attempts++;
-                            continue; // RETRY LOOP
+                            continue; 
                         }
-                        
                         throw new Error(data.error.message);
                     }
-                    
-                    return data; // Success
-
+                    return data; 
                 } catch (e) {
-                    // Network errors
                     if (isUserAdmin && attempts < maxAttempts - 1) {
                         if (e.message.includes('quota') || e.message.includes('429')) {
                             continue;
@@ -1000,7 +1109,7 @@
 
         // --- STATE ---
         let isPlaying = false;
-        let isLooping = false; // New Loop State
+        let isLooping = false;
         let audioDuration = 0;
         let hasTranscript = false;
         let currentFile = null;
@@ -1187,7 +1296,7 @@
         }
 
         function switchTab(tab) {
-            ['Dictation', 'Deep', 'Quiz', 'Reading', 'Writing', 'Pronun', 'Grammar'].forEach(t => {
+            ['Dictation', 'Deep', 'Quiz', 'Reading', 'Writing', 'Pronun', 'Grammar', 'Vocab'].forEach(t => {
                 const tabEl = document.getElementById(`tab${t}`);
                 if(tabEl) {
                     const baseClass = "px-4 py-2 transition whitespace-nowrap text-sm sm:text-base";
@@ -1205,7 +1314,7 @@
             const player = document.getElementById('audioPlayerBar');
             const uploadBtn = document.getElementById('audioUploadContainer');
             
-            if(tab === 'reading' || tab === 'writing' || tab === 'deep' || tab === 'pronun' || tab === 'grammar') { 
+            if(tab === 'reading' || tab === 'writing' || tab === 'deep' || tab === 'pronun' || tab === 'grammar' || tab === 'vocab') { 
                 player.style.display = 'none'; 
                 uploadBtn.style.display = 'none'; 
             } else { 
@@ -1224,7 +1333,6 @@
             container.innerHTML = '';
 
             GRAMMAR_TREE.forEach((section, index) => {
-                // Section Header
                 const sectionDiv = document.createElement('div');
                 sectionDiv.className = 'mb-3';
                 sectionDiv.innerHTML = `
@@ -1276,10 +1384,8 @@
             btn.disabled = true;
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang xử lý...';
             
-            // Limit text to avoid token limits
             const contentToProcess = rawVocabToolData.split('\n').slice(0, 100).join('\n'); 
 
-            // --- CHANGED: Updated prompt to strictly forbid commas inside fields ---
             const prompt = `
             Task: Enrich this vocabulary list.
             Input: A list of words (one per line).
@@ -1308,7 +1414,6 @@
             }
         }
 
-        // Handle Vocabulary Import for Grammar (Existing)
         function handleGrammarVocabUpload(event) {
             const file = event.target.files[0];
             if(!file) return;
@@ -1316,18 +1421,15 @@
             const reader = new FileReader();
             reader.onload = (e) => {
                 const text = e.target.result;
-                // Parse CSV simple: assume word is in first column
                 const rows = text.split(/\r?\n/);
                 const words = [];
                 rows.forEach(row => {
                     const cols = row.split(',');
-                    // Handle case where header is present
                     if(cols[0] && cols[0].toLowerCase() !== 'word' && cols[0].trim().length > 1) {
                         words.push(cols[0].trim());
                     }
                 });
                 
-                // Shuffle and pick up to 50 words to avoid token limit
                 const shuffled = words.sort(() => 0.5 - Math.random());
                 grammarVocabList = shuffled.slice(0, 50);
                 
@@ -1346,7 +1448,6 @@
                 selectedTopics = Array.from(retryTopics);
                 showToast(`Đang tạo bài tập cải thiện (${selectedTopics.length} chủ điểm)...`);
             } else {
-                // Collect checked boxes
                 const checkboxes = document.querySelectorAll('.grammar-checkbox:checked');
                 checkboxes.forEach(cb => selectedTopics.push(cb.value));
                 if(selectedTopics.length === 0) return alert("Vui lòng chọn ít nhất 1 chủ điểm ngữ pháp!");
@@ -1360,7 +1461,6 @@
             btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> AI đang soạn đề...';
             showLoader("AI đang soạn 20 câu hỏi ngữ pháp...");
 
-            // Construct Prompt with Vocabulary Integration
             let vocabInstruction = "";
             if (grammarVocabList.length > 0) {
                 vocabInstruction = `\nIMPORTANT: Try to integrate these vocabulary words into the questions or options where natural: [${grammarVocabList.join(', ')}].`;
@@ -1388,7 +1488,6 @@
                 try {
                     grammarQuizData = JSON.parse(txt);
                 } catch(e) {
-                    // Fallback cleanup if JSON is dirty
                     const firstBracket = txt.indexOf('[');
                     const lastBracket = txt.lastIndexOf(']');
                     if(firstBracket !== -1 && lastBracket !== -1) {
@@ -1402,7 +1501,6 @@
                 renderGrammarQuestions();
                 showToast("Đã tạo xong bài tập!");
                 
-                // Reset failed topics for new session
                 failedGrammarTopics.clear();
                 
             } catch(e) {
@@ -1421,7 +1519,6 @@
             document.getElementById('grammarActionBar').classList.remove('hidden');
             document.getElementById('grammarActionBar').classList.add('flex');
             
-            // Reset buttons
             document.getElementById('btnCheckGrammar').classList.remove('hidden');
             document.getElementById('btnImproveGrammar').classList.add('hidden');
             document.getElementById('btnResetGrammar').classList.add('hidden');
@@ -1478,9 +1575,7 @@
             grammarQuizData.forEach((item, index) => {
                 const selected = document.querySelector(`input[name="gq_${index}"]:checked`);
                 const resEl = document.getElementById(`gq_res_${index}`);
-                const card = document.getElementById(`gq_card_${index}`);
                 
-                // Disable inputs
                 const inputs = document.querySelectorAll(`input[name="gq_${index}"]`);
                 inputs.forEach(inp => inp.disabled = true);
 
@@ -1503,7 +1598,6 @@
                 } else {
                     resEl.innerHTML = '<span class="text-gray-400">Chưa làm</span>';
                     if(item.topic) failedGrammarTopics.add(item.topic);
-                    // Show answer
                     const correctLbl = document.getElementById(`gq_lbl_${index}_${item.correct}`);
                     correctLbl.classList.add('bg-green-50', 'border-green-200');
                 }
@@ -1511,7 +1605,6 @@
 
             document.getElementById('grammarScore').innerText = `${correctCount}/${grammarQuizData.length}`;
             
-            // Switch buttons
             document.getElementById('btnCheckGrammar').classList.add('hidden');
             if (failedGrammarTopics.size > 0) {
                 document.getElementById('btnImproveGrammar').classList.remove('hidden');
@@ -1529,7 +1622,6 @@
         }
 
         function resetGrammarQuiz() {
-            // Just clear inputs and styles, simpler than re-render
             const container = document.getElementById('grammarQuizContent');
             const inputs = container.querySelectorAll('input[type="radio"]');
             inputs.forEach(inp => {
@@ -1551,6 +1643,175 @@
             document.getElementById('btnResetGrammar').classList.add('hidden');
         }
 
+        // --- VOCABULARY MODULE ---
+        
+        function switchVocabType(type) {
+            currentVocabType = type;
+            const btnT = document.getElementById('btnVocabToeic');
+            const btnI = document.getElementById('btnVocabIelts');
+            
+            if (type === 'TOEIC') {
+                btnT.className = "flex-1 py-1.5 rounded text-xs font-bold bg-cyan-600 text-white shadow transition";
+                btnI.className = "flex-1 py-1.5 rounded text-xs font-bold text-gray-500 hover:bg-gray-50 transition";
+            } else {
+                btnI.className = "flex-1 py-1.5 rounded text-xs font-bold bg-cyan-600 text-white shadow transition";
+                btnT.className = "flex-1 py-1.5 rounded text-xs font-bold text-gray-500 hover:bg-gray-50 transition";
+            }
+            renderVocabTopics();
+        }
+
+        function renderVocabTopics() {
+            const select = document.getElementById('vocabTopicSelect');
+            select.innerHTML = '';
+            
+            VOCAB_TOPICS[currentVocabType].forEach(topic => {
+                const opt = document.createElement('option');
+                opt.value = topic.name;
+                opt.innerText = topic.name;
+                select.appendChild(opt);
+            });
+        }
+
+        async function generateVocabQuiz() {
+            const topic = document.getElementById('vocabTopicSelect').value;
+            const level = document.getElementById('vocabLevel').value;
+            
+            const btn = document.getElementById('btnGenVocab');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Đang tạo đề...';
+            showLoader("AI đang soạn 15 câu hỏi từ vựng...");
+
+            const prompt = `Generate 15 vocabulary multiple-choice questions for ${currentVocabType}.
+            Level: ${level}.
+            Topic: ${topic}.
+            Output STRICT JSON format (Array of objects).
+            Fields:
+            - word (string): The key vocabulary word being tested.
+            - meaning (string): Vietnamese meaning of the key word.
+            - q (string): A sentence with a blank.
+            - options (array): 4 choices (one is the key word or related).
+            - correct (int): Index (0-3).
+            - option_meanings (array): 4 Vietnamese meanings corresponding to the options.
+            `;
+
+            try {
+                const data = await callGeminiAPI('gemini-2.5-flash-preview-09-2025', { contents: [{ parts: [{ text: prompt }] }] });
+                let txt = getSafeText(data).replace(/```json/g, '').replace(/```/g, '').trim();
+                
+                try {
+                     vocabQuizData = JSON.parse(txt);
+                } catch(e) {
+                     const firstBracket = txt.indexOf('[');
+                     const lastBracket = txt.lastIndexOf(']');
+                     if(firstBracket !== -1 && lastBracket !== -1) {
+                         txt = txt.substring(firstBracket, lastBracket + 1);
+                         vocabQuizData = JSON.parse(txt);
+                     } else throw e;
+                }
+
+                renderVocabQuiz();
+                showToast("Đã tạo đề từ vựng thành công!");
+
+            } catch(e) {
+                alert("Lỗi AI: " + e.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-bolt mr-2 text-yellow-300"></i> Tạo Đề (15 Câu)';
+                hideLoader();
+            }
+        }
+
+        function renderVocabQuiz() {
+            document.getElementById('vocabEmptyState').classList.add('hidden');
+            const container = document.getElementById('vocabQuizContent');
+            container.classList.remove('hidden'); // THIS WAS THE MISSING LINE!
+            container.innerHTML = '';
+            document.getElementById('vocabActionBar').classList.remove('hidden');
+            document.getElementById('vocabActionBar').classList.add('flex');
+            
+            // Reset state
+            document.getElementById('btnCheckVocab').style.display = 'block';
+            document.getElementById('vocabScore').innerText = '--/15';
+
+            vocabQuizData.forEach((item, index) => {
+                const card = document.createElement('div');
+                card.className = "bg-white p-5 rounded-lg shadow-sm border border-gray-200";
+                
+                let optionsHtml = '';
+                item.options.forEach((opt, idx) => {
+                    // Tooltip data
+                    const meaning = item.option_meanings && item.option_meanings[idx] ? item.option_meanings[idx] : "Tra từ điển";
+                    
+                    optionsHtml += `
+                        <label class="vocab-option relative flex items-center space-x-3 p-3 rounded-lg border border-gray-100 hover:bg-gray-50 cursor-pointer transition" data-meaning="${meaning}">
+                            <input type="radio" name="vq_${index}" value="${idx}" class="form-radio text-cyan-600 h-4 w-4">
+                            <span class="text-gray-700 font-medium">${opt}</span>
+                        </label>
+                    `;
+                });
+
+                card.innerHTML = `
+                    <div class="flex justify-between items-start mb-3">
+                        <span class="bg-cyan-100 text-cyan-800 text-xs font-bold px-2 py-1 rounded">Câu ${index + 1}</span>
+                    </div>
+                    <div class="font-medium text-lg text-gray-800 mb-4">${item.q}</div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-2 mb-2">
+                        ${optionsHtml}
+                    </div>
+                    <div id="vq_res_${index}" class="text-sm font-bold mt-2"></div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function checkVocabAnswers() {
+            let correctCount = 0;
+            vocabQuizData.forEach((item, index) => {
+                const selected = document.querySelector(`input[name="vq_${index}"]:checked`);
+                const resEl = document.getElementById(`vq_res_${index}`);
+                
+                // Disable inputs
+                const inputs = document.querySelectorAll(`input[name="vq_${index}"]`);
+                inputs.forEach(inp => inp.disabled = true);
+
+                if(selected) {
+                    const val = parseInt(selected.value);
+                    if (val === item.correct) {
+                        correctCount++;
+                        resEl.innerHTML = `<span class="text-green-600"><i class="fas fa-check"></i> Đúng (${item.word}: ${item.meaning})</span>`;
+                        selected.parentElement.classList.add('bg-green-50', 'border-green-200');
+                    } else {
+                        resEl.innerHTML = `<span class="text-red-500"><i class="fas fa-times"></i> Sai. Đáp án: ${item.options[item.correct]} (${item.meaning})</span>`;
+                        selected.parentElement.classList.add('bg-red-50', 'border-red-200');
+                        // Highlight correct
+                        const correctInput = document.querySelector(`input[name="vq_${index}"][value="${item.correct}"]`);
+                        if(correctInput) correctInput.parentElement.classList.add('bg-green-50', 'border-green-200', 'ring-1', 'ring-green-300');
+                    }
+                } else {
+                    resEl.innerHTML = `<span class="text-gray-500">Chưa làm. Đáp án: ${item.options[item.correct]}</span>`;
+                }
+            });
+
+            document.getElementById('vocabScore').innerText = `${correctCount}/${vocabQuizData.length}`;
+            document.getElementById('btnCheckVocab').style.display = 'none';
+        }
+
+        function exportVocabQuiz() {
+            if (vocabQuizData.length === 0) return alert("Chưa có dữ liệu để xuất.");
+            
+            let csv = "Question,Correct Word,Meaning,Context Sentence\n";
+            vocabQuizData.forEach(q => {
+                // Sanitize content for CSV (remove commas/quotes)
+                const safeQ = `"${q.q.replace(/"/g, '""')}"`;
+                const safeWord = `"${q.word}"`;
+                const safeMeaning = `"${q.meaning}"`;
+                
+                csv += `${safeQ},${safeWord},${safeMeaning}\n`;
+            });
+            
+            downloadCSV(csv, `Vocab_Quiz_Export_${Date.now()}.csv`);
+        }
+
         // --- MAIN AUDIO PLAYER ---
         function handleAudioUpload(e) {
             const file = e.target.files[0]; if(!file) return;
@@ -1568,14 +1829,12 @@
         function togglePlay() { if(!audio.src) return alert("Chưa có file audio."); if(isPlaying) audio.pause(); else audio.play(); isPlaying = !isPlaying; updatePlayButton(); }
         function updatePlayButton() { playBtn.innerHTML = isPlaying ? '<i class="fas fa-pause"></i>' : '<i class="fas fa-play ml-1"></i>'; }
         
-        // --- UPDATED PROGRESS & AUDIO ENDED ---
         function updateProgress() {
             const cur = audio.currentTime; 
             progressBar.style.width = `${(cur/audioDuration)*100}%`; 
             seekSlider.value = Math.floor(cur); 
             currentTimeEl.innerText = formatTime(cur);
             
-            // Check for segment loop or end
             if(segmentEnd !== null && cur >= segmentEnd) { 
                 audio.pause(); 
                 isPlaying = false; 
@@ -1610,7 +1869,6 @@
             audio.currentTime = start; segmentEnd = safeEnd; audio.play(); isPlaying = true; updatePlayButton();
         }
         
-        // --- NEW: LOOP FUNCTIONALITY ---
         function toggleLoop() {
              isLooping = document.getElementById('loopToggle').checked;
              showToast(isLooping ? "Đã bật tự động lặp lại" : "Đã tắt lặp lại");
@@ -1626,9 +1884,7 @@
             }
         }
 
-        // --- DICTATION & REALTIME TRANSCRIPT (UPDATED) ---
-        
-        // NEW: Toggle Transcript Language
+        // --- DICTATION & REALTIME TRANSCRIPT ---
         function toggleTranscriptLang(lang) {
             const contentEn = document.getElementById('transcriptContent');
             const contentVi = document.getElementById('transcriptTranslation');
@@ -1654,7 +1910,6 @@
             if(!currentAudioBase64) return alert("Chưa có audio.");
             showToast("Đang tạo Transcript & Dịch nghĩa...");
             
-            // UPDATED PROMPT: Request Vietnamese Translation
             const prompt = `Transcribe audio strictly into JSON segments. Include Vietnamese translation for each segment. 
             Format: [{"start":0.0,"end":2.5,"text":"Hello world", "vi": "Xin chào thế giới"}]. 
             Do not use markdown. Timestamps in seconds.`;
@@ -1690,7 +1945,6 @@
             contentVi.innerHTML = '';
             
             transcriptData.forEach((seg, index) => {
-                // English Segment
                 const spanEn = document.createElement('span');
                 spanEn.id = `ts_${index}`;
                 spanEn.className = 't-segment mr-1';
@@ -1704,7 +1958,6 @@
                 };
                 contentEn.appendChild(spanEn);
 
-                // Vietnamese Segment (Block style)
                 const divVi = document.createElement('div');
                 divVi.className = 'mb-2 p-1 border-l-2 border-indigo-200 pl-2 hover:bg-indigo-50 transition cursor-pointer';
                 divVi.innerHTML = `<span class="text-[10px] font-mono text-gray-400 mr-2">${formatTime(seg.start)}</span>${seg.vi || "..."}`;
@@ -1730,7 +1983,7 @@
                     start: i * avgDur,
                     end: (i + 1) * avgDur,
                     text: s.trim(),
-                    vi: "(Thủ công - Chưa dịch)" // Placeholder for manual save
+                    vi: "(Thủ công - Chưa dịch)"
                 }));
                 
                 renderRealtimeTranscript();
@@ -1739,7 +1992,6 @@
             } 
         }
 
-        // --- DICTATION CHECKING ---
         function checkResult() {
             if(!hasTranscript) return alert("Chưa có Transcript.");
             const user = userTyping.value.trim(); const original = targetText.value.trim();
@@ -1815,7 +2067,6 @@
             alert(`Bạn đúng ${score}/${quizData.length} câu.`);
         }
 
-        // --- READING MODULE ---
         function switchReadingMode(mode) {
             const auto = document.getElementById('readModeAuto'); const man = document.getElementById('readModeManual');
             const btnA = document.getElementById('tabReadAuto'); const btnM = document.getElementById('tabReadManual');
@@ -1909,7 +2160,6 @@
             
             showLoader("Đang trích xuất từ vựng...");
             
-            // --- CHANGED: Updated prompt to strictly forbid commas inside fields ---
             const prompt = `Extract 20 hard vocabulary words from this text for B2/C1 learners. Output CSV (Word, Meaning, Type). IMPORTANT: Use semicolons (;) to separate multiple meanings. Do NOT use commas inside a column. Text: ${passage.substring(0,2000)}`;
             
             try {
@@ -1960,7 +2210,7 @@
             } catch(e) { alert("Lỗi: " + e.message); } finally { btn.innerText = "Chấm điểm & Sửa lỗi"; btn.disabled = false; }
         }
 
-        // --- EXPORT TO DEEP DRILL (UPDATED) ---
+        // --- EXPORT TO DEEP DRILL ---
         async function exportDeepDrill(sourceId, levelId) {
             const text = document.getElementById(sourceId).value;
             const level = document.getElementById(levelId).value;
@@ -1973,7 +2223,6 @@
             if(level === 'b1') levelPrompt = "CEFR B1-C2 (Intermediate to Advanced)";
             if(level === 'b2') levelPrompt = "CEFR B2-C2 (Advanced)";
             
-            // --- CHANGED: Updated prompt to strictly forbid commas inside fields ---
             const prompt = `Analyze this text and extract 15-20 key vocabulary items... ${levelPrompt} ... OUTPUT STRICT CSV FORMAT... IMPORTANT: Use semicolons (;) to separate multiple meanings/definitions. Do NOT use commas inside a field.`;
 
             try {
@@ -2005,7 +2254,6 @@
             if(levelCode === 'b1') levelPrompt = "CEFR B1-C2";
             if(levelCode === 'b2') levelPrompt = "CEFR B2-C2";
             
-            // --- CHANGED: Updated prompt to strictly forbid commas inside fields ---
             const prompt = `Analyze text, extract 15 key words (${levelPrompt}). Output CSV (No Header): Word/Phrase, VN Meaning, Eng Def, IPA. Use semicolons (;) for multiple meanings. Do NOT use commas inside a column. Text: ${text.substring(0, 3000)}`;
             
             try {
@@ -2303,13 +2551,12 @@
 
         async function generatePronunciationDrill() {
             const type = document.getElementById('pronunType').value;
-            const count = 3; // Tăng lên 3 cặp/nhóm theo yêu cầu
+            const count = 3; 
             const historyStr = pronunciationHistory.join(", ");
             const btn = document.getElementById('btnGenPronun');
             btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Đang tạo...';
             showLoader("AI đang tìm cặp từ dễ nhầm lẫn...");
 
-            // Cập nhật Prompt để yêu cầu thêm nghĩa tiếng Việt
             const prompt = `Generate ${count} unique minimal ${type} (words that sound similar but are different) for English learners.
             Type: ${type === 'pairs' ? 'Pairs (2 words)' : 'Groups of 3 words'}.
             Exclude words: [${historyStr}].
@@ -2341,7 +2588,6 @@
                 
                 pronunciationData = json;
                 
-                // Add to history safely
                 json.forEach(item => {
                     if (item.words && Array.isArray(item.words)) {
                         item.words.forEach(w => pronunciationHistory.push(w));
@@ -2452,11 +2698,10 @@
         function exportPronunciation() {
             if (pronunciationData.length === 0) return alert("Chưa có dữ liệu để xuất.");
             
-            let csv = "Group ID,Description,Word,IPA,Meaning\n"; // Thêm cột Meaning
+            let csv = "Group ID,Description,Word,IPA,Meaning\n"; 
             pronunciationData.forEach((group, idx) => {
                 group.words.forEach((w, wIdx) => {
                     const safeDesc = (group.desc || "").replace(/,/g, " ");
-                    // --- CHANGED: Use semicolon for meaning list inside cell ---
                     const meaning = (group.meanings && group.meanings[wIdx]) ? group.meanings[wIdx].replace(/,/g, "; ") : "";
                     csv += `${idx + 1},"${safeDesc}","${w}","${group.ipa[wIdx]}","${meaning}"\n`;
                 });
