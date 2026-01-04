@@ -640,7 +640,27 @@
         </div>
 
         <!-- VIEW 7: GRAMMAR -->
-        <div id="viewGrammar" class="hidden flex-1 flex flex-col md:flex-row overflow-hidden bg-red-50">
+        <div id="viewGrammar" class="hidden flex-1 flex flex-col md:flex-row overflow-hidden bg-red-50 relative">
+            
+            <!-- NEW: Vocab Enrichment Tool (Floating) -->
+            <div class="absolute top-4 right-4 z-30 bg-white p-3 rounded-lg shadow-lg border border-red-200 w-64 text-xs">
+                <div class="flex justify-between items-center mb-2 border-b border-red-100 pb-1">
+                    <h4 class="font-bold text-red-800"><i class="fas fa-wand-magic-sparkles mr-1 text-yellow-500"></i>Tạo CSV Từ vựng</h4>
+                    <i class="fas fa-info-circle text-gray-400 cursor-help" title="Upload danh sách từ (1 cột) -> AI thêm nghĩa & IPA -> Tải về CSV 4 cột để dùng."></i>
+                </div>
+                <div class="space-y-2">
+                    <div class="relative">
+                         <input type="file" id="vocabToolInput" accept=".csv,.txt" class="hidden" onchange="handleVocabToolUpload(event)">
+                        <label for="vocabToolInput" class="cursor-pointer block w-full text-center bg-gray-50 border border-dashed border-gray-300 rounded py-2 text-gray-600 hover:bg-gray-100 transition">
+                            <span id="vocabToolFileName">Chọn file (txt/csv)</span>
+                        </label>
+                    </div>
+                    <button onclick="generateEnrichedCSV()" id="btnVocabToolAction" class="w-full bg-red-600 hover:bg-red-700 text-white py-1.5 rounded font-bold shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">
+                        Xử lý & Tải về
+                    </button>
+                </div>
+            </div>
+
             <!-- Sidebar: Grammar Tree -->
             <div class="w-full md:w-80 lg:w-96 bg-white border-r border-red-100 flex flex-col flex-shrink-0 h-full">
                 <div class="p-4 border-b border-red-100 flex justify-between items-center bg-red-50">
@@ -784,6 +804,7 @@
         let grammarQuizData = [];
         let failedGrammarTopics = new Set(); // To track weak points
         let grammarVocabList = []; // Store imported vocabulary
+        let rawVocabToolData = ""; // Store data for the tool
 
         // --- APP INIT ---
         function initApp() {
@@ -1201,7 +1222,59 @@
             else icon.classList.remove('-rotate-90');
         }
 
-        // NEW: Handle Vocabulary Import for Grammar
+        // NEW: Vocab Enrichment Tool Logic
+        function handleVocabToolUpload(event) {
+            const file = event.target.files[0];
+            if(!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                rawVocabToolData = e.target.result;
+                document.getElementById('vocabToolFileName').innerText = file.name;
+            };
+            reader.readAsText(file);
+        }
+
+        async function generateEnrichedCSV() {
+            if(!rawVocabToolData) return alert("Vui lòng chọn file trước.");
+            
+            const btn = document.getElementById('btnVocabToolAction');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang xử lý...';
+            
+            // Limit text to avoid token limits
+            const contentToProcess = rawVocabToolData.split('\n').slice(0, 100).join('\n'); 
+
+            // --- CHANGED: Updated prompt to strictly forbid commas inside fields ---
+            const prompt = `
+            Task: Enrich this vocabulary list.
+            Input: A list of words (one per line).
+            Output: A CSV format with exactly 4 columns: Word, Vietnamese Meaning, English Definition, IPA.
+            
+            Rules:
+            1. Use semicolons (;) to separate multiple meanings/definitions. NEVER use commas inside a field.
+            2. First line must be header: Word,Vietnamese,English,IPA
+            3. Provide accurate IPA and meanings.
+            
+            Input Data:
+            ${contentToProcess}
+            `;
+
+            try {
+                const data = await callGeminiAPI('gemini-2.5-flash-preview-09-2025', { contents: [{ parts: [{ text: prompt }] }] });
+                let csvText = getSafeText(data).replace(/```csv/g, '').replace(/```/g, '').trim();
+                
+                downloadCSV(csvText, `Enriched_Vocab_${Date.now()}.csv`);
+                showToast("Đã tạo và tải xuống CSV 4 cột!");
+            } catch(e) {
+                alert("Lỗi AI: " + e.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = 'Xử lý & Tải về';
+            }
+        }
+
+        // Handle Vocabulary Import for Grammar (Existing)
         function handleGrammarVocabUpload(event) {
             const file = event.target.files[0];
             if(!file) return;
@@ -1214,7 +1287,8 @@
                 const words = [];
                 rows.forEach(row => {
                     const cols = row.split(',');
-                    if(cols[0] && cols[0].trim().length > 1) {
+                    // Handle case where header is present
+                    if(cols[0] && cols[0].toLowerCase() !== 'word' && cols[0].trim().length > 1) {
                         words.push(cols[0].trim());
                     }
                 });
@@ -1727,7 +1801,10 @@
             if(!passage) return alert("Chưa có bài đọc.");
             
             showLoader("Đang trích xuất từ vựng...");
-            const prompt = `Extract 20 hard vocabulary words from this text for B2/C1 learners. Output CSV (Word, Meaning, Type). Text: ${passage.substring(0,2000)}`;
+            
+            // --- CHANGED: Updated prompt to strictly forbid commas inside fields ---
+            const prompt = `Extract 20 hard vocabulary words from this text for B2/C1 learners. Output CSV (Word, Meaning, Type). IMPORTANT: Use semicolons (;) to separate multiple meanings. Do NOT use commas inside a column. Text: ${passage.substring(0,2000)}`;
+            
             try {
                 const data = await callGeminiAPI('gemini-2.5-flash-preview-09-2025', { contents: [{ parts: [{ text: prompt }] }] });
 
@@ -1789,7 +1866,8 @@
             if(level === 'b1') levelPrompt = "CEFR B1-C2 (Intermediate to Advanced)";
             if(level === 'b2') levelPrompt = "CEFR B2-C2 (Advanced)";
             
-            const prompt = `Analyze this text and extract 15-20 key vocabulary items... ${levelPrompt} ... OUTPUT STRICT CSV FORMAT...`;
+            // --- CHANGED: Updated prompt to strictly forbid commas inside fields ---
+            const prompt = `Analyze this text and extract 15-20 key vocabulary items... ${levelPrompt} ... OUTPUT STRICT CSV FORMAT... IMPORTANT: Use semicolons (;) to separate multiple meanings/definitions. Do NOT use commas inside a field.`;
 
             try {
                 const data = await callGeminiAPI('gemini-2.5-flash-preview-09-2025', { contents: [{ parts: [{ text: prompt }] }] });
@@ -1820,7 +1898,8 @@
             if(levelCode === 'b1') levelPrompt = "CEFR B1-C2";
             if(levelCode === 'b2') levelPrompt = "CEFR B2-C2";
             
-            const prompt = `Analyze text, extract 15 key words (${levelPrompt}). Output CSV (No Header): Word/Phrase, VN Meaning, Eng Def, IPA. Text: ${text.substring(0, 3000)}`;
+            // --- CHANGED: Updated prompt to strictly forbid commas inside fields ---
+            const prompt = `Analyze text, extract 15 key words (${levelPrompt}). Output CSV (No Header): Word/Phrase, VN Meaning, Eng Def, IPA. Use semicolons (;) for multiple meanings. Do NOT use commas inside a column. Text: ${text.substring(0, 3000)}`;
             
             try {
                 const data = await callGeminiAPI('gemini-2.5-flash-preview-09-2025', { contents: [{ parts: [{ text: prompt }] }] });
@@ -2270,7 +2349,8 @@
             pronunciationData.forEach((group, idx) => {
                 group.words.forEach((w, wIdx) => {
                     const safeDesc = (group.desc || "").replace(/,/g, " ");
-                    const meaning = (group.meanings && group.meanings[wIdx]) ? group.meanings[wIdx].replace(/,/g, " ") : "";
+                    // --- CHANGED: Use semicolon for meaning list inside cell ---
+                    const meaning = (group.meanings && group.meanings[wIdx]) ? group.meanings[wIdx].replace(/,/g, "; ") : "";
                     csv += `${idx + 1},"${safeDesc}","${w}","${group.ipa[wIdx]}","${meaning}"\n`;
                 });
             });
