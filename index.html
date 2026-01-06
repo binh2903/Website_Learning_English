@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>English Master: v27 Pro (Vocab & Grammar)</title>
+    <title>English Master: v27 Pro (Speaking & Grammar)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -351,7 +351,7 @@
                 <i class="fas fa-pen-nib mr-1"></i> Writing
             </button>
             <button onclick="switchTab('pronun')" id="tabPronun" class="tab-inactive px-4 py-2 transition whitespace-nowrap text-sm sm:text-base text-teal-600">
-                <i class="fas fa-microphone-alt mr-1"></i> Pronunciation
+                <i class="fas fa-microphone-alt mr-1"></i> Speaking
             </button>
             <button onclick="switchTab('grammar')" id="tabGrammar" class="tab-inactive px-4 py-2 transition whitespace-nowrap text-sm sm:text-base text-red-800">
                 <i class="fas fa-list-check mr-1"></i> Grammar
@@ -598,7 +598,7 @@
             </div>
         </div>
 
-        <!-- VIEW 4: READING (UPDATED) -->
+        <!-- VIEW 4: READING -->
         <div id="viewReading" class="hidden flex-1 flex flex-col md:flex-row overflow-hidden bg-gray-50">
             <div class="flex-1 p-6 md:p-8 overflow-y-auto bg-white border-r border-gray-200">
                 <div id="readingPlaceholder" class="h-full flex flex-col items-center justify-center text-gray-400">
@@ -725,19 +725,30 @@
             </div>
         </div>
 
-        <!-- VIEW 6: PRONUNCIATION -->
-        <div id="viewPronun" class="hidden flex-1 flex flex-col bg-teal-50 overflow-hidden">
+        <!-- VIEW 6: SPEAKING (RENAMED FROM PRONUNCIATION) -->
+        <div id="viewPronun" class="hidden flex-1 flex flex-col bg-teal-50 overflow-hidden relative">
             <div class="bg-white p-4 border-b border-gray-200 flex flex-wrap gap-4 justify-between items-center shadow-sm z-10">
-                <div class="flex items-center space-x-4">
-                    <div class="flex items-center space-x-2">
-                        <label class="text-xs font-bold text-gray-500 uppercase">Loại bài tập:</label>
-                        <select id="pronunType" class="text-sm border border-gray-300 rounded p-1.5 bg-gray-50 focus:border-teal-500 focus:outline-none">
-                            <option value="pairs">Cặp từ (Minimal Pairs)</option>
-                            <option value="triplets">Nhóm 3 từ (Triplets)</option>
+                <div class="flex items-center space-x-4 w-full md:w-auto">
+                    <div class="flex items-center space-x-2 w-full">
+                        <label class="text-xs font-bold text-gray-500 uppercase whitespace-nowrap">Chế độ:</label>
+                        <select id="pronunType" onchange="toggleSpeakingMode()" class="flex-1 text-sm border border-gray-300 rounded p-1.5 bg-gray-50 focus:border-teal-500 focus:outline-none max-w-xs">
+                            <optgroup label="Luyện Phát Âm (Drills)">
+                                <option value="pairs">Cặp từ (Minimal Pairs)</option>
+                                <option value="triplets">Nhóm 3 từ (Triplets)</option>
+                                <option value="special">Từ khó/Đặc biệt</option>
+                                <option value="ending_s">Phát âm đuôi -s/-es</option>
+                                <option value="ending_ed">Phát âm đuôi -ed</option>
+                            </optgroup>
+                            <optgroup label="Luyện Speaking (Tests)">
+                                <option value="toeic_speak">TOEIC Speaking (New Format)</option>
+                                <option value="ielts_speak">IELTS Speaking (Interviewer)</option>
+                            </optgroup>
                         </select>
                     </div>
                 </div>
-                <div class="flex space-x-2">
+                
+                <!-- Drill Controls -->
+                <div id="drillControls" class="flex space-x-2">
                     <button onclick="generatePronunciationDrill()" id="btnGenPronun" class="bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-lg font-bold text-sm shadow-md transition flex items-center">
                         <i class="fas fa-sync-alt mr-2"></i> Tạo bài tập (AI)
                     </button>
@@ -745,23 +756,47 @@
                         <i class="fas fa-file-export mr-2"></i> Xuất CSV
                     </button>
                 </div>
+
+                <!-- Test Controls -->
+                <div id="testControls" class="hidden flex space-x-2 flex-1 md:justify-end relative">
+                    <input type="text" id="speakTopic" placeholder="Chủ đề (VD: Hobbies)..." class="p-2 border border-gray-300 rounded text-sm w-32 md:w-48">
+                    <button onclick="suggestTrendingTopics('speaking')" class="text-pink-500 px-2 hover:bg-pink-50 rounded" title="Gợi ý Topic"><i class="fas fa-magic"></i></button>
+                    <div id="speakTrendSuggestions" class="absolute top-10 right-20 z-50 bg-white border border-gray-200 shadow-xl p-2 rounded w-64 hidden flex flex-col gap-1"></div>
+
+                    <button onclick="generateSpeakingTest()" id="btnGenSpeakTest" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-bold text-sm shadow-md transition flex items-center whitespace-nowrap">
+                        <i class="fas fa-play-circle mr-2"></i> Bắt đầu thi
+                    </button>
+                </div>
             </div>
+
+            <!-- Content Area -->
             <div id="pronunContent" class="flex-1 overflow-y-auto p-4 md:p-6">
                 <!-- Empty State -->
                 <div id="pronunEmpty" class="h-full flex flex-col items-center justify-center text-gray-400">
                     <div class="w-24 h-24 bg-teal-100 rounded-full flex items-center justify-center mb-4">
                         <i class="fas fa-microphone-alt text-4xl text-teal-600"></i>
                     </div>
-                    <h3 class="text-xl font-bold text-gray-700 mb-2">Luyện Phát Âm</h3>
-                    <p class="mb-6 text-center max-w-sm">Tạo danh sách các từ dễ nhầm lẫn (Minimal Pairs) để luyện nghe và phát âm.</p>
-                    <button onclick="generatePronunciationDrill()" class="bg-teal-600 hover:bg-teal-700 text-white px-6 py-3 rounded-lg font-bold shadow-lg transition transform active:scale-95">
-                        Bắt đầu ngay
-                    </button>
+                    <h3 class="text-xl font-bold text-gray-700 mb-2">Luyện Speaking & Phát Âm</h3>
+                    <p class="mb-6 text-center max-w-sm">Chọn chế độ Luyện tập (Drills) hoặc Thi thử (Tests) để bắt đầu.</p>
                 </div>
                 
-                <!-- Grid Container -->
+                <!-- Drill Grid Container -->
                 <div id="pronunGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 hidden">
                     <!-- Cards will be injected here -->
+                </div>
+
+                <!-- Test Interface Container -->
+                <div id="speakingTestInterface" class="hidden max-w-4xl mx-auto bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden flex flex-col h-full">
+                    <div id="speakTestHeader" class="bg-gray-50 p-4 border-b border-gray-200 flex justify-between items-center flex-shrink-0">
+                        <h3 class="font-bold text-gray-800 flex items-center"><i class="fas fa-user-clock mr-2 text-purple-600"></i><span id="speakTestTypeLabel">IELTS SPEAKING</span></h3>
+                        <div class="flex space-x-2">
+                             <span class="text-xs font-bold px-2 py-1 bg-purple-100 text-purple-800 rounded flex items-center"><i class="fas fa-stopwatch mr-1"></i> Exam Mode</span>
+                        </div>
+                    </div>
+                    
+                    <div id="speakQuestionArea" class="flex-1 overflow-y-auto p-6 space-y-8 bg-gray-50">
+                        <!-- Questions injected here -->
+                    </div>
                 </div>
             </div>
         </div>
@@ -1057,6 +1092,7 @@
         let rawVocabToolData = ""; 
         let currentVocabType = "TOEIC";
         let currentReadingData = null; // Store Reading Data (Passage + Qs)
+        let speakingTestData = null; // Store Speaking Data
 
         // --- APP INIT ---
         function initApp() {
@@ -1279,23 +1315,63 @@
 
         // --- TREND SUGGESTION ---
         async function suggestTrendingTopics(type) {
-            const container = type === 'audio' ? document.getElementById('audioTrendSuggestions') : document.getElementById('readTrendSuggestions');
-            const input = type === 'audio' ? document.getElementById('genTopic') : document.getElementById('readTopic');
-            const difficulty = type === 'audio' ? document.getElementById('genDifficulty').value : document.getElementById('readLevel').value;
-            container.innerHTML = '<span class="text-xs text-gray-400">Đang tìm trend...</span>'; container.classList.remove('hidden');
-            const prompt = `Generate 3 trending TOEIC/IELTS ${type === 'audio' ? 'speaking/listening' : 'reading'} topics for ${difficulty} level. Output ONLY JSON array: ["Topic 1", "Topic 2", "Topic 3"]`;
+            // New logic to handle speaking separately
+            let container, input, difficulty;
+
+            if (type === 'speaking') {
+                container = document.getElementById('speakTrendSuggestions');
+                input = document.getElementById('speakTopic');
+                difficulty = 'medium'; // Default difficulty for speaking suggestions
+            } else if (type === 'audio') {
+                container = document.getElementById('audioTrendSuggestions');
+                input = document.getElementById('genTopic');
+                difficulty = document.getElementById('genDifficulty').value;
+            } else {
+                container = document.getElementById('readTrendSuggestions');
+                input = document.getElementById('readTopic');
+                difficulty = document.getElementById('readLevel').value;
+            }
+
+            container.innerHTML = '<span class="text-xs text-gray-400 p-2">Đang tìm trend...</span>'; 
+            container.classList.remove('hidden');
+            
+            const prompt = `Generate 3 trending TOEIC/IELTS ${type === 'audio' || type === 'speaking' ? 'speaking/listening' : 'reading'} topics for ${difficulty} level. Output ONLY JSON array: ["Topic 1", "Topic 2", "Topic 3"]`;
+            
             try {
                 const data = await callGeminiAPI('gemini-2.5-flash-preview-09-2025', { contents: [{ parts: [{ text: prompt }] }] });
                 let text = data.candidates?.[0]?.content?.parts?.[0]?.text.replace(/```json/g, '').replace(/```/g, '').trim();
                 const topics = JSON.parse(text);
+                
                 container.innerHTML = '';
                 topics.forEach(t => {
                     const chip = document.createElement('div');
-                    chip.className = `trend-chip px-3 py-1 bg-${type === 'audio' ? 'pink' : 'green'}-100 text-${type === 'audio' ? 'pink' : 'green'}-700 rounded-full text-xs font-bold border border-${type === 'audio' ? 'pink' : 'green'}-200`;
-                    chip.innerText = t; chip.onclick = () => { input.value = t; container.classList.add('hidden'); };
+                    // Style specific for speaking dropdown vs others
+                    if (type === 'speaking') {
+                        chip.className = "cursor-pointer p-2 hover:bg-purple-50 text-sm text-gray-700 border-b border-gray-100 last:border-0";
+                    } else {
+                        chip.className = `trend-chip px-3 py-1 bg-${type === 'audio' ? 'pink' : 'green'}-100 text-${type === 'audio' ? 'pink' : 'green'}-700 rounded-full text-xs font-bold border border-${type === 'audio' ? 'pink' : 'green'}-200 cursor-pointer`;
+                    }
+                    
+                    chip.innerText = t; 
+                    chip.onclick = () => { 
+                        input.value = t; 
+                        container.classList.add('hidden'); 
+                    };
                     container.appendChild(chip);
                 });
-            } catch(e) { container.innerHTML = '<span class="text-xs text-red-400">Lỗi. Kiểm tra API Key.</span>'; }
+                
+                // Hide on click outside
+                if (type === 'speaking') {
+                    const closeFn = (e) => {
+                         if (!container.contains(e.target) && e.target !== input) {
+                            container.classList.add('hidden');
+                            document.removeEventListener('click', closeFn);
+                         }
+                    };
+                    setTimeout(() => document.addEventListener('click', closeFn), 100);
+                }
+
+            } catch(e) { container.innerHTML = '<span class="text-xs text-red-400 p-2">Lỗi. Kiểm tra API Key.</span>'; }
         }
 
         // --- READING MODULE (UPDATED) ---
@@ -2925,7 +3001,31 @@
         function deepRestart() { deepCurrentGroup=0; deepCurrentChallenge=0; deepScore={correct:0,wrong:0}; startDeepSession(); }
         function deepResetProgress() { if(confirm("Xóa tiến độ?")) { localStorage.removeItem(`deep_prog_${deepFileName}`); deepRestart(); } }
 
-        // --- PRONUNCIATION MODULE ---
+        // --- PRONUNCIATION / SPEAKING MODULE ---
+
+        function toggleSpeakingMode() {
+            const type = document.getElementById('pronunType').value;
+            const drillControls = document.getElementById('drillControls');
+            const testControls = document.getElementById('testControls');
+            const drillGrid = document.getElementById('pronunGrid');
+            const testInterface = document.getElementById('speakingTestInterface');
+            const empty = document.getElementById('pronunEmpty');
+
+            if (type.includes('speak')) { // Test mode
+                drillControls.classList.add('hidden');
+                testControls.classList.remove('hidden');
+                drillGrid.classList.add('hidden');
+                testInterface.classList.add('hidden'); // Initially hidden until generated
+                empty.classList.remove('hidden');
+                document.getElementById('pronunEmpty').querySelector('p').innerText = "Nhập chủ đề và nhấn 'Bắt đầu thi' để AI tạo đề.";
+            } else { // Drill mode
+                drillControls.classList.remove('hidden');
+                testControls.classList.add('hidden');
+                testInterface.classList.add('hidden');
+                empty.classList.remove('hidden');
+                document.getElementById('pronunEmpty').querySelector('p').innerText = "Chọn loại bài tập và nhấn 'Tạo bài tập' để bắt đầu.";
+            }
+        }
 
         async function generatePronunciationDrill() {
             const type = document.getElementById('pronunType').value;
@@ -2933,21 +3033,20 @@
             const historyStr = pronunciationHistory.join(", ");
             const btn = document.getElementById('btnGenPronun');
             btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Đang tạo...';
-            showLoader("AI đang tìm cặp từ dễ nhầm lẫn...");
+            showLoader("AI đang tìm dữ liệu phát âm...");
 
-            const prompt = `Generate ${count} unique minimal ${type} (words that sound similar but are different) for English learners.
-            Type: ${type === 'pairs' ? 'Pairs (2 words)' : 'Groups of 3 words'}.
-            Exclude words: [${historyStr}].
-            Output STRICT JSON format (Array of objects):
-            [
-                {
-                    "words": ["ship", "sheep"],
-                    "ipa": ["ʃɪp", "ʃiːp"],
-                    "meanings": ["tàu thủy", "con cừu"],
-                    "desc": "Short i vs Long i"
-                },
-                ...
-            ]`;
+            let prompt = "";
+            if (type === 'pairs') {
+                prompt = `Generate ${count} unique minimal pairs (words that sound similar but are different) for English learners. Exclude: [${historyStr}]. Output JSON: [{"words": ["ship", "sheep"], "ipa": ["ʃɪp", "ʃiːp"], "meanings": ["tàu", "cừu"], "desc": "Short i vs Long i"}]`;
+            } else if (type === 'triplets') {
+                prompt = `Generate ${count} unique groups of 3 words that sound similar. Exclude: [${historyStr}]. Output JSON: [{"words": ["there", "their", "they're"], "ipa": ["ðer", "ðer", "ðer"], "meanings": ["đó", "của họ", "họ là"], "desc": "Homophones"}]`;
+            } else if (type === 'special') {
+                prompt = `Generate ${count} groups of English words that are notoriously difficult to pronounce or have silent letters. Output JSON: [{"words": ["colonel", "choir"], "ipa": ["ˈkɜːrnəl", "ˈkwaɪər"], "meanings": ["đại tá", "dàn hợp xướng"], "desc": "Difficult Words"}]`;
+            } else if (type === 'ending_s') {
+                prompt = `Generate ${count} groups of words demonstrating the 3 sounds of -s/-es endings (/s/, /z/, /ɪz/). Output JSON: [{"words": ["cats", "dogs", "boxes"], "ipa": ["kæts", "dɒgz", "bɒksɪz"], "meanings": ["mèo", "chó", "hộp"], "desc": "/s/ vs /z/ vs /ɪz/"}]`;
+            } else if (type === 'ending_ed') {
+                prompt = `Generate ${count} groups of words demonstrating the 3 sounds of -ed endings (/t/, /d/, /ɪd/). Output JSON: [{"words": ["talked", "played", "wanted"], "ipa": ["tɔːkt", "pleɪd", "wɒntɪd"], "meanings": ["nói", "chơi", "muốn"], "desc": "/t/ vs /d/ vs /ɪd/"}]`;
+            }
 
             try {
                 const data = await callGeminiAPI('gemini-2.5-flash-preview-09-2025', { contents: [{ parts: [{ text: prompt }] }] });
@@ -2985,7 +3084,9 @@
         function renderPronunciationDrill() {
             const grid = document.getElementById('pronunGrid');
             const empty = document.getElementById('pronunEmpty');
+            const testInterface = document.getElementById('speakingTestInterface');
             
+            testInterface.classList.add('hidden'); // Ensure test interface is hidden
             if(!pronunciationData || pronunciationData.length === 0) {
                 empty.classList.remove('hidden');
                 grid.classList.add('hidden');
@@ -2995,6 +3096,18 @@
             empty.classList.add('hidden');
             grid.classList.remove('hidden');
             grid.innerHTML = '';
+            
+            // Adjust grid layout based on item count to avoid squeezing
+            // Default: 1 col mobile, 2 tablet, 3 desktop
+            grid.className = "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6";
+
+            const type = document.getElementById('pronunType').value;
+            const isSpecialFormat = (type === 'ending_s' || type === 'ending_ed' || type === 'triplets');
+
+            if (isSpecialFormat) {
+                 // For S/ES/ED and Triplets, force fewer columns to give more space
+                 grid.className = "grid grid-cols-1 md:grid-cols-1 lg:grid-cols-2 gap-6";
+            }
 
             pronunciationData.forEach((group, groupIdx) => {
                 let cardsHtml = '';
@@ -3004,15 +3117,15 @@
                         const meaning = (group.meanings && group.meanings[wordIdx]) ? group.meanings[wordIdx] : '';
                         
                         cardsHtml += `
-                            <div class="flex flex-col items-center p-2 bg-gray-50 rounded border border-gray-100 relative h-full">
-                                <span class="text-lg font-bold text-gray-800">${word}</span>
-                                <span class="text-xs text-gray-500 font-mono mb-1">/${ipa}/</span>
-                                <span class="text-[11px] text-indigo-600 font-medium mb-3 text-center min-h-[1rem]">${meaning}</span>
+                            <div class="flex flex-col items-center p-3 bg-gray-50 rounded-lg border border-gray-100 relative h-full min-w-[100px] flex-1">
+                                <span class="text-xl font-bold text-gray-800 break-words text-center">${word}</span>
+                                <span class="text-sm text-gray-500 font-mono mb-1">/${ipa}/</span>
+                                <span class="text-xs text-indigo-600 font-medium mb-3 text-center min-h-[1.2rem] leading-tight">${meaning}</span>
                                 <div class="flex space-x-2 mt-auto">
-                                    <button onclick="playWord('${word}')" class="w-8 h-8 rounded-full bg-teal-100 text-teal-700 hover:bg-teal-200 flex items-center justify-center transition" title="Nghe mẫu">
+                                    <button onclick="playWord('${word}')" class="w-8 h-8 rounded-full bg-teal-100 text-teal-700 hover:bg-teal-200 flex items-center justify-center transition shadow-sm" title="Nghe mẫu">
                                         <i class="fas fa-volume-up text-xs"></i>
                                     </button>
-                                    <button onclick="checkPronunciation('${word}', 'pronunRes_${groupIdx}_${wordIdx}')" class="w-8 h-8 rounded-full bg-white border border-gray-300 text-gray-600 hover:text-teal-600 hover:border-teal-400 flex items-center justify-center transition" title="Kiểm tra giọng">
+                                    <button onclick="checkPronunciation('${word}', 'pronunRes_${groupIdx}_${wordIdx}')" class="w-8 h-8 rounded-full bg-white border border-gray-300 text-gray-600 hover:text-teal-600 hover:border-teal-400 flex items-center justify-center transition shadow-sm" title="Kiểm tra giọng">
                                         <i class="fas fa-microphone text-xs"></i>
                                     </button>
                                 </div>
@@ -3021,17 +3134,177 @@
                         `;
                     });
 
+                    // Conditional Header rendering based on user request ("bỏ hàng chữ xanh")
+                    let headerHtml = '';
+                    if (!isSpecialFormat) {
+                        headerHtml = `<div class="text-xs font-bold text-teal-600 uppercase mb-3 tracking-wide border-b border-gray-100 pb-2">${group.desc || 'Minimal Pair'}</div>`;
+                    }
+
                     const card = document.createElement('div');
-                    card.className = "bg-white p-4 rounded-xl shadow-sm border border-gray-200 pronun-card";
+                    card.className = "bg-white p-5 rounded-xl shadow-md border border-gray-100 pronun-card";
                     card.innerHTML = `
-                        <div class="text-xs font-bold text-teal-600 uppercase mb-3 tracking-wide border-b border-gray-100 pb-2">${group.desc || 'Minimal Pair'}</div>
-                        <div class="grid grid-cols-${group.words.length} gap-2 divide-x divide-gray-100">
+                        ${headerHtml}
+                        <div class="flex flex-row gap-4 overflow-x-auto pb-2">
                             ${cardsHtml}
                         </div>
                     `;
                     grid.appendChild(card);
                 }
             });
+        }
+
+        async function generateSpeakingTest() {
+            const type = document.getElementById('pronunType').value;
+            const topic = document.getElementById('speakTopic').value || "General";
+            const btn = document.getElementById('btnGenSpeakTest');
+            
+            btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Generating...';
+            showLoader("AI đang soạn đề thi Speaking...");
+            
+            let prompt = "";
+            if (type === 'toeic_speak') {
+                prompt = `Generate a short TOEIC Speaking Test (New Format) on topic "${topic}". Include 4 questions covering: 1. Describe a picture (simulate with text description), 2. Respond to questions, 3. Propose a solution, 4. Express an opinion. For each question, provide: "question", "thinking_process" (Vietnamese), "speaking_strategy" (Vietnamese), "sample_ideas" (Vietnamese bullet points). Output JSON Array.`;
+            } else {
+                prompt = `Generate an IELTS Speaking Test Simulation on topic "${topic}". Include 3 parts: Part 1 (Introduction), Part 2 (Cue Card), Part 3 (Discussion). For each part, provide: "question", "thinking_process" (Vietnamese), "speaking_strategy" (Vietnamese), "sample_ideas" (Vietnamese bullet points). Output JSON Array.`;
+            }
+
+            try {
+                const data = await callGeminiAPI('gemini-2.5-flash-preview-09-2025', { contents: [{ parts: [{ text: prompt }] }] });
+                let txt = getSafeText(data).replace(/```json/g, '').replace(/```/g, '').trim();
+                speakingTestData = JSON.parse(txt);
+                
+                renderSpeakingTest(type);
+            } catch(e) {
+                alert("Lỗi AI: " + e.message);
+            } finally {
+                btn.disabled = false; btn.innerHTML = '<i class="fas fa-play-circle mr-2"></i> Bắt đầu thi';
+                hideLoader();
+            }
+        }
+
+        function renderSpeakingTest(type) {
+            const grid = document.getElementById('pronunGrid');
+            const empty = document.getElementById('pronunEmpty');
+            const testInterface = document.getElementById('speakingTestInterface');
+            const container = document.getElementById('speakQuestionArea');
+            const typeLabel = document.getElementById('speakTestTypeLabel');
+
+            empty.classList.add('hidden');
+            grid.classList.add('hidden');
+            testInterface.classList.remove('hidden');
+            
+            typeLabel.innerText = type === 'toeic_speak' ? "TOEIC SPEAKING TEST" : "IELTS SPEAKING TEST";
+            container.innerHTML = '';
+
+            speakingTestData.forEach((q, idx) => {
+                const div = document.createElement('div');
+                div.className = "bg-white p-6 rounded-xl border border-gray-200 shadow-sm transition hover:shadow-md";
+                div.innerHTML = `
+                    <div class="flex items-start mb-4">
+                        <div class="flex-shrink-0 bg-purple-100 text-purple-700 font-bold w-8 h-8 rounded-full flex items-center justify-center mr-3 mt-1 text-sm shadow-sm">${idx+1}</div>
+                        <div class="flex-1">
+                             <div class="font-bold text-gray-800 text-lg leading-snug">${q.question.replace(/\n/g, '<br>')}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="ml-11 mb-4 flex space-x-2">
+                        <button onclick="document.getElementById('speakHint_${idx}').classList.toggle('hidden')" class="text-xs font-bold text-orange-600 bg-orange-50 hover:bg-orange-100 border border-orange-200 px-3 py-1.5 rounded-full transition flex items-center">
+                            <i class="far fa-lightbulb mr-1.5"></i> Gợi ý & Chiến thuật
+                        </button>
+                    </div>
+
+                    <div id="speakHint_${idx}" class="hidden ml-11 mb-6 bg-orange-50 p-4 rounded-lg text-sm text-gray-700 border-l-4 border-orange-400 shadow-inner">
+                        <div class="mb-2"><strong class="text-orange-800 uppercase text-xs tracking-wide">Thinking Process:</strong><br>${q.thinking_process}</div>
+                        <div class="mb-2"><strong class="text-orange-800 uppercase text-xs tracking-wide">Strategy:</strong><br>${q.speaking_strategy}</div>
+                        <div><strong class="text-orange-800 uppercase text-xs tracking-wide">Ideas:</strong><br>${q.sample_ideas}</div>
+                    </div>
+
+                    <div class="ml-11">
+                        <div class="relative">
+                            <textarea id="speakAnswer_${idx}" class="w-full p-4 border border-gray-300 rounded-lg focus:border-purple-500 focus:ring-2 focus:ring-purple-100 focus:outline-none text-base mb-3 shadow-inner bg-gray-50 transition" rows="3" placeholder="Nhập câu trả lời của bạn ở đây..."></textarea>
+                            <div class="absolute bottom-5 right-2 text-xs text-gray-400 pointer-events-none">Rec/Type</div>
+                        </div>
+                        <div class="flex flex-wrap gap-2">
+                            <button onclick="recordSpeakingAnswer(${idx})" id="btnRecord_${idx}" class="flex-1 md:flex-none bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 px-4 py-2 rounded-lg text-sm font-bold transition flex items-center justify-center shadow-sm">
+                                <i class="fas fa-microphone mr-2 text-red-500"></i> Thu âm (Mic)
+                            </button>
+                            <button onclick="submitSpeakingAnswer(${idx})" id="btnSubmit_${idx}" class="flex-1 md:flex-none bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded-lg text-sm font-bold transition flex items-center justify-center shadow-md transform active:scale-95">
+                                <i class="fas fa-paper-plane mr-2"></i> Chấm điểm AI
+                            </button>
+                        </div>
+                        <div id="speakResult_${idx}" class="hidden mt-4 p-4 bg-green-50 rounded-lg border border-green-200 text-sm shadow-sm animate-fade-in-up"></div>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function recordSpeakingAnswer(idx) {
+             if (!window.SpeechRecognition && !window.webkitSpeechRecognition) return alert("Trình duyệt không hỗ trợ.");
+             const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+             const rec = new SR();
+             rec.lang = 'en-US';
+             const btn = document.getElementById(`btnRecord_${idx}`);
+             const area = document.getElementById(`speakAnswer_${idx}`);
+             
+             btn.classList.add('bg-red-100', 'text-red-600', 'animate-pulse', 'border-red-300');
+             btn.innerHTML = '<i class="fas fa-stop mr-2"></i> Đang nghe...';
+             
+             rec.start();
+             
+             rec.onresult = (e) => {
+                 const txt = e.results[0][0].transcript;
+                 area.value = txt;
+             };
+             
+             rec.onend = () => {
+                 btn.classList.remove('bg-red-100', 'text-red-600', 'animate-pulse', 'border-red-300');
+                 btn.classList.add('bg-white', 'text-gray-700');
+                 btn.innerHTML = '<i class="fas fa-microphone mr-2 text-red-500"></i> Thu âm (Mic)';
+             };
+        }
+
+        async function submitSpeakingAnswer(idx) {
+            const question = speakingTestData[idx].question;
+            const answer = document.getElementById(`speakAnswer_${idx}`).value;
+            const resultDiv = document.getElementById(`speakResult_${idx}`);
+            const btn = document.getElementById(`btnSubmit_${idx}`);
+            
+            if(!answer) return alert("Vui lòng nhập câu trả lời.");
+            
+            btn.disabled = true; btn.innerText = "Đang chấm...";
+            
+            const prompt = `Evaluate this Speaking answer.
+            Question: "${question}"
+            User Answer: "${answer}"
+            Output JSON: {
+                "score": "Score (0-10 or Band)",
+                "feedback": "Vietnamese feedback on grammar/vocab/fluency",
+                "better_version": "A better way to say it (English)"
+            }`;
+
+            try {
+                const data = await callGeminiAPI('gemini-2.5-flash-preview-09-2025', { contents: [{ parts: [{ text: prompt }] }] });
+                let txt = getSafeText(data).replace(/```json/g, '').replace(/```/g, '').trim();
+                const json = JSON.parse(txt);
+                
+                resultDiv.classList.remove('hidden');
+                resultDiv.innerHTML = `
+                    <div class="flex items-center justify-between mb-2 pb-2 border-b border-green-200">
+                        <span class="font-bold text-green-800 text-lg">Điểm: ${json.score}</span>
+                        <i class="fas fa-check-circle text-green-500 text-xl"></i>
+                    </div>
+                    <div class="text-gray-700 mb-3 leading-relaxed"><b>Nhận xét:</b> ${json.feedback}</div>
+                    <div class="bg-white p-3 rounded border border-purple-100 text-purple-800 text-sm">
+                        <div class="font-bold text-xs uppercase text-purple-400 mb-1">Gợi ý cách nói hay hơn:</div>
+                        <i class="fas fa-quote-left text-purple-300 mr-2"></i>${json.better_version}
+                    </div>
+                `;
+            } catch(e) {
+                alert("Lỗi AI: " + e.message);
+            } finally {
+                btn.disabled = false; btn.innerHTML = '<i class="fas fa-paper-plane mr-2"></i> Chấm điểm AI';
+            }
         }
 
         function playWord(word) {
