@@ -16,6 +16,10 @@
         .t-segment { cursor: pointer; transition: all 0.2s; padding: 2px 4px; border-radius: 4px; display: inline; line-height: 1.8; margin-right: 4px; }
         .t-segment:hover { background-color: #e0e7ff; color: #4338ca; }
         .t-active { background-color: #fef08a; color: #854d0e; font-weight: bold; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+        
+        /* Vietnamese Transcript Active State */
+        .tv-segment { transition: all 0.2s; border-left: 3px solid transparent; }
+        .tv-active { background-color: #fef9c3; color: #854d0e; font-weight: bold; border-left: 3px solid #ca8a04; padding-left: 8px; transform: translateX(4px); }
 
         /* Animations */
         .shake { animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both; }
@@ -75,6 +79,9 @@
             opacity: 0.9;
             pointer-events: none;
         }
+
+        /* Reading Hints */
+        .reading-hint-box { border-left: 3px solid #f59e0b; background-color: #fffbeb; padding: 8px; font-size: 0.85em; margin-top: 8px; display: none; }
     </style>
 </head>
 <body class="h-screen flex flex-col items-center p-2 sm:p-4 bg-gradient-to-br from-blue-50 to-indigo-50 overflow-hidden" onload="initApp()">
@@ -166,7 +173,7 @@
                     </div>
                 </div>
                 
-                <!-- NEW: VOICE CONFIGURATION -->
+                <!-- VOICE CONFIGURATION -->
                 <div class="flex space-x-2 bg-gray-50 p-3 rounded border border-gray-200">
                     <div class="w-1/2">
                         <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">Giọng Đọc</label>
@@ -224,46 +231,65 @@
         </div>
     </div>
 
-    <!-- READING MODAL -->
+    <!-- READING MODAL (UPDATED) -->
     <div id="readingModal" class="hidden fixed inset-0 modal-overlay flex items-center justify-center p-4">
         <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg p-6 flex flex-col max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-center mb-4">
-                <h3 class="text-lg font-bold text-gray-800"><i class="fas fa-book-open mr-2 text-green-600"></i>Tạo bài đọc (Reading)</h3>
+                <h3 class="text-lg font-bold text-gray-800"><i class="fas fa-book-open mr-2 text-green-600"></i>Luyện Reading Pro (AI)</h3>
                 <button onclick="document.getElementById('readingModal').classList.add('hidden')" class="text-gray-400 hover:text-gray-600"><i class="fas fa-times"></i></button>
             </div>
-            <div class="flex space-x-2 mb-4 border-b border-gray-200">
-                <button onclick="switchReadingMode('auto')" id="tabReadAuto" class="flex-1 pb-2 border-b-2 border-green-600 font-bold text-green-700">Tự động (AI)</button>
-                <button onclick="switchReadingMode('manual')" id="tabReadManual" class="flex-1 pb-2 border-b-2 border-transparent text-gray-500 hover:text-gray-700">Thủ công</button>
-            </div>
-            <div id="readModeAuto" class="space-y-4">
+            
+            <div id="readModeAuto" class="space-y-3">
+                <!-- Exam Type Selection -->
+                <div class="flex space-x-2">
+                    <div class="w-1/2">
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Chứng chỉ</label>
+                        <select id="readExamType" onchange="updateReadParts()" class="w-full p-2 border border-gray-300 rounded-lg text-sm bg-white font-bold text-gray-700">
+                            <option value="TOEIC">TOEIC</option>
+                            <option value="IELTS">IELTS</option>
+                        </select>
+                    </div>
+                    <div class="w-1/2">
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Phần thi (Part)</label>
+                        <select id="readExamPart" class="w-full p-2 border border-gray-300 rounded-lg text-sm bg-white">
+                            <!-- Populated by JS -->
+                        </select>
+                    </div>
+                </div>
+
                 <div>
-                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Chủ đề</label>
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Chủ đề (Topic)</label>
                     <div class="relative">
-                        <input type="text" id="readTopic" class="w-full p-3 border border-gray-300 rounded-lg text-sm focus:border-green-500 outline-none pr-10" placeholder="VD: Environment...">
+                        <input type="text" id="readTopic" class="w-full p-3 border border-gray-300 rounded-lg text-sm focus:border-green-500 outline-none pr-10" placeholder="VD: Environment, Business...">
                         <button onclick="suggestTrendingTopics('reading')" class="absolute right-2 top-1/2 transform -translate-y-1/2 text-green-500 hover:text-green-700" title="Gợi ý chủ đề Trend">
                             <i class="fas fa-magic"></i>
                         </button>
                     </div>
                     <div id="readTrendSuggestions" class="mt-2 flex flex-wrap gap-2 hidden"></div>
                 </div>
+
                 <div>
                     <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Độ khó</label>
                     <select id="readLevel" class="w-full p-3 border border-gray-300 rounded-lg text-sm bg-white">
-                        <option value="toeic">TOEIC Part 7 (Dễ)</option>
-                        <option value="ielts_med">IELTS Standard (Trung bình)</option>
-                        <option value="ielts_hard">IELTS Advanced (Khó)</option>
+                        <option value="easy">Easy (Dễ)</option>
+                        <option value="medium" selected>Medium (Trung bình)</option>
+                        <option value="hard">Hard (Khó - Nâng cao)</option>
                     </select>
                 </div>
-            </div>
-            <div id="readModeManual" class="hidden space-y-4">
-                <div>
-                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Dán bài đọc</label>
-                    <textarea id="manualReadText" class="w-full h-32 p-3 border border-gray-300 rounded-lg text-sm" placeholder="Paste article..."></textarea>
+                
+                <div class="bg-blue-50 p-2 rounded text-[10px] text-blue-800 border border-blue-100 italic">
+                    <i class="fas fa-lightbulb mr-1 text-yellow-500"></i> AI sẽ tạo bài đọc kèm:
+                    <ul class="list-disc ml-4 mt-1">
+                        <li>Cách tư duy (Skimming/Scanning)</li>
+                        <li>Từ khóa (Keywords) trong bài</li>
+                        <li>Gợi ý mớm ý (Scaffolding hints)</li>
+                    </ul>
                 </div>
             </div>
-            <div class="mt-6 pt-4 border-t border-gray-100">
-                <button onclick="generateReadingTask()" id="btnGenReading" class="w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded-lg font-bold shadow-md transition flex items-center justify-center">
-                    <i class="fas fa-magic mr-2 text-yellow-300"></i> Tạo Đề Ngay
+
+            <div class="mt-4 pt-4 border-t border-gray-100">
+                <button onclick="generateReadingTask()" id="btnGenReading" class="w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded-lg font-bold shadow-md transition flex items-center justify-center transform active:scale-95">
+                    <i class="fas fa-magic mr-2 text-yellow-300"></i> Tạo Đề & Chấm Điểm
                 </button>
             </div>
         </div>
@@ -385,33 +411,44 @@
         <!-- VIEW 1: DICTATION -->
         <div id="viewDictation" class="flex-1 flex flex-col md:flex-row overflow-hidden">
             <!-- LEFT: Realtime Transcript -->
-            <div class="w-full md:w-1/2 p-4 bg-gray-50 flex flex-col overflow-hidden border-r border-gray-200 order-2 md:order-1">
+            <div class="w-full md:w-1/2 p-4 bg-gray-50 flex flex-col overflow-hidden border-r border-gray-200 order-2 md:order-1 transition-all">
                 <div class="flex justify-between items-center mb-2 flex-shrink-0">
                     <h3 class="text-xs font-bold text-gray-500 uppercase flex items-center">
-                        <i class="fas fa-stream mr-2 text-indigo-500"></i> Transcript Realtime
+                        <i class="fas fa-stream mr-2 text-indigo-500"></i> Transcript
                     </h3>
                     <div class="flex space-x-1 items-center">
+                         <button onclick="toggleTranscriptVisibility()" id="btnToggleTranscript" class="text-xs bg-gray-100 border border-gray-300 hover:bg-gray-200 text-gray-700 px-2 py-1 rounded transition mr-2 flex items-center">
+                            <i class="fas fa-eye mr-1"></i> Hiện Transcript
+                        </button>
                         <div class="flex bg-gray-200 rounded p-0.5 mr-2">
                              <button onclick="toggleTranscriptLang('en')" id="btnTransEn" class="text-[10px] px-2 py-0.5 rounded bg-white text-gray-800 font-bold shadow-sm transition">EN</button>
                              <button onclick="toggleTranscriptLang('vi')" id="btnTransVi" class="text-[10px] px-2 py-0.5 rounded text-gray-500 hover:text-gray-700 transition">VI</button>
                         </div>
                         <button onclick="generateTranscriptFromAI()" class="text-xs bg-indigo-100 hover:bg-indigo-200 text-indigo-700 px-2 py-1 rounded transition" title="Tạo Transcript AI">
-                            <i class="fas fa-magic mr-1"></i> Tạo AI
+                            <i class="fas fa-magic"></i> AI
                         </button>
                         <button onclick="openSetupModal()" class="text-xs bg-white border border-gray-300 hover:bg-gray-100 text-gray-600 px-2 py-1 rounded transition">
-                            <i class="fas fa-edit"></i> Sửa
+                            <i class="fas fa-edit"></i>
                         </button>
                     </div>
                 </div>
-                <div id="transcriptContainer" class="flex-1 overflow-y-auto bg-white border border-gray-200 rounded-lg p-4 shadow-inner text-gray-700 text-sm md:text-base leading-relaxed relative">
+                <!-- Wrapper for Hide/Show -->
+                <div id="transcriptWrapper" class="flex-1 overflow-y-auto bg-white border border-gray-200 rounded-lg shadow-inner text-gray-700 text-sm md:text-base leading-relaxed relative hidden">
                     <div id="transcriptPlaceholder" class="absolute inset-0 flex flex-col items-center justify-center text-gray-400 p-6 text-center">
                         <i class="fas fa-wave-square text-3xl mb-2 text-gray-300"></i>
                         <p>Chưa có dữ liệu Realtime.</p>
-                        <p class="text-xs mt-1">Bấm <strong>"Tạo AI"</strong> hoặc nhập thủ công rồi Lưu để đồng bộ.</p>
+                        <p class="text-xs mt-1">Bấm <strong>"Tạo AI"</strong> hoặc nhập thủ công.</p>
                     </div>
-                    <div id="transcriptContent" class="space-y-4"></div>
-                    <div id="transcriptTranslation" class="space-y-4 hidden text-indigo-800"></div>
+                    <div id="transcriptContent" class="space-y-4 p-4"></div>
+                    <div id="transcriptTranslation" class="space-y-4 hidden text-indigo-800 p-4"></div>
                 </div>
+                <!-- Mask for Hidden State -->
+                <div id="transcriptHiddenMask" class="flex-1 flex flex-col items-center justify-center bg-gray-100 border border-gray-200 rounded-lg text-gray-400">
+                    <i class="fas fa-eye-slash text-3xl mb-2"></i>
+                    <p class="text-sm">Transcript đang ẩn</p>
+                    <p class="text-xs">Tập trung nghe và chép lại bên phải.</p>
+                </div>
+
                 <div class="mt-3 bg-blue-50 p-2 rounded border border-blue-100 flex-shrink-0">
                     <div class="flex items-center justify-between">
                         <span class="text-xs font-bold text-blue-700 mr-2">Xuất Deep Drill:</span>
@@ -561,7 +598,7 @@
             </div>
         </div>
 
-        <!-- VIEW 4: READING -->
+        <!-- VIEW 4: READING (UPDATED) -->
         <div id="viewReading" class="hidden flex-1 flex flex-col md:flex-row overflow-hidden bg-gray-50">
             <div class="flex-1 p-6 md:p-8 overflow-y-auto bg-white border-r border-gray-200">
                 <div id="readingPlaceholder" class="h-full flex flex-col items-center justify-center text-gray-400">
@@ -571,11 +608,11 @@
                         <i class="fas fa-plus mr-2"></i> Tạo Bài Đọc Mới
                     </button>
                 </div>
-                <div id="readingDisplay" class="hidden reading-content text-gray-800 text-lg mb-6"></div>
+                <div id="readingDisplay" class="hidden reading-content text-gray-800 text-lg mb-6 leading-relaxed"></div>
                 <!-- Reading Action Bar -->
                 <div id="readingActionBar" class="hidden mb-6 flex flex-wrap gap-2 justify-end">
                     <button onclick="exportReadingToWord()" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg text-sm font-bold shadow-sm transition flex items-center">
-                        <i class="fas fa-file-word mr-2"></i> Xuất Word
+                        <i class="fas fa-file-word mr-2"></i> Xuất Word (Đề & Đáp án)
                     </button>
                     <button onclick="exportReadingToExcel()" class="bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded-lg text-sm font-bold shadow-sm transition flex items-center">
                         <i class="fas fa-file-excel mr-2"></i> Xuất Excel (Từ vựng)
@@ -603,7 +640,7 @@
                     <div class="text-center text-gray-400 mt-10 text-sm italic">Câu hỏi trắc nghiệm sẽ hiện tại đây sau khi tạo bài đọc.</div>
                 </div>
                 <div class="p-4 bg-white border-t border-gray-200 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
-                    <button onclick="checkReadingQuiz()" id="btnCheckReading" class="w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded-lg font-bold shadow-md transition disabled:opacity-50">Nộp bài & Xem giải thích</button>
+                    <button onclick="checkReadingQuiz()" id="btnCheckReading" class="w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded-lg font-bold shadow-md transition disabled:opacity-50 hidden">Nộp bài & Xem giải thích</button>
                 </div>
             </div>
         </div>
@@ -612,39 +649,67 @@
         <div id="viewWriting" class="hidden flex-1 flex flex-col md:flex-row overflow-hidden bg-white">
             <div class="w-full md:w-1/3 bg-orange-50 border-r border-orange-100 flex flex-col p-4 overflow-y-auto">
                 <div class="mb-4">
-                    <h3 class="font-bold text-orange-800 mb-2 flex items-center"><i class="fas fa-lightbulb mr-2"></i> Đề bài (Topic)</h3>
+                    <h3 class="font-bold text-orange-800 mb-2 flex items-center"><i class="fas fa-lightbulb mr-2"></i> Thiết Lập Đề Viết</h3>
                     <div class="flex space-x-2 mb-2 text-xs">
                         <button onclick="toggleWritingMode('auto')" id="wBtnAuto" class="font-bold underline text-orange-700">Tạo Tự Động (AI)</button>
                         <span class="text-gray-400">|</span>
                         <button onclick="toggleWritingMode('manual')" id="wBtnManual" class="text-gray-500 hover:text-orange-700">Nhập Thủ Công</button>
                     </div>
+                    
                     <div id="writeAutoUI" class="space-y-2">
-                        <select id="writeLevel" class="w-full p-2 border border-orange-200 rounded text-sm">
-                            <option value="easy">Dễ (Daily Life)</option>
-                            <option value="medium">Trung bình (TOEIC/IELTS Task 1)</option>
-                            <option value="hard">Khó (IELTS Task 2)</option>
+                        <!-- Exam Type -->
+                        <div class="flex space-x-2">
+                             <select id="writeExamType" class="flex-1 p-2 border border-orange-200 rounded text-sm bg-white" onchange="updateWriteTasks()">
+                                <option value="TOEIC">TOEIC Writing</option>
+                                <option value="IELTS">IELTS Writing</option>
+                            </select>
+                             <select id="writeLevel" class="w-1/3 p-2 border border-orange-200 rounded text-sm bg-white">
+                                <option value="easy">Dễ</option>
+                                <option value="medium" selected>Vừa</option>
+                                <option value="hard">Khó</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Task Type (Dynamic) -->
+                        <select id="writeTaskType" class="w-full p-2 border border-orange-200 rounded text-sm bg-white">
+                            <!-- Populated by JS -->
                         </select>
-                        <button onclick="generateWritingTopic()" id="btnGenWriteTopic" class="w-full bg-orange-500 hover:bg-orange-600 text-white py-1.5 rounded text-sm font-bold shadow-sm">
+
+                        <button onclick="generateWritingTopic()" id="btnGenWriteTopic" class="w-full bg-orange-500 hover:bg-orange-600 text-white py-2 rounded text-sm font-bold shadow-sm flex items-center justify-center">
                             <i class="fas fa-dice mr-1"></i> Tạo Đề Mới
                         </button>
                     </div>
+
                     <div id="writeManualUI" class="hidden">
                         <textarea id="writeManualInput" class="w-full p-2 border border-orange-200 rounded text-sm h-20" placeholder="Nhập đề bài..."></textarea>
                     </div>
+                    
                     <div id="writingTopicDisplay" class="mt-4 p-3 bg-white border border-orange-200 rounded-lg text-sm font-medium text-gray-800 shadow-sm hidden"></div>
                 </div>
-                <div class="flex-1 mt-2">
-                    <button onclick="getWritingHints()" id="btnGetHints" class="w-full border border-orange-300 text-orange-700 hover:bg-orange-100 py-2 rounded-lg text-sm font-bold mb-2 hidden"><i class="fas fa-key mr-1"></i> Gợi ý & Từ vựng</button>
-                    <div id="writingHints" class="text-xs text-gray-700 space-y-2 overflow-y-auto hidden"></div>
+                
+                <div class="flex-1 mt-2 space-y-2">
+                    <button onclick="getWritingOutline()" id="btnGetOutline" class="w-full bg-white border-2 border-orange-400 text-orange-700 hover:bg-orange-50 py-2 rounded-lg text-sm font-bold hidden flex items-center justify-center">
+                        <i class="fas fa-sitemap mr-2"></i> Lập Dàn Ý & Tư Duy (AI)
+                    </button>
+                    <button onclick="getWritingHints()" id="btnGetHints" class="w-full border border-orange-300 text-orange-700 hover:bg-orange-100 py-2 rounded-lg text-sm font-bold hidden"><i class="fas fa-key mr-1"></i> Từ vựng Gợi ý</button>
+                    <div id="writingHints" class="text-xs text-gray-700 space-y-2 overflow-y-auto hidden bg-white p-2 rounded border border-orange-100"></div>
                 </div>
             </div>
             <div class="flex-1 flex flex-col p-4 md:p-6 bg-white overflow-y-auto">
                 <h3 class="font-bold text-gray-800 mb-2">Bài viết của bạn</h3>
                 <textarea id="writingInput" class="flex-1 w-full p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-200 focus:outline-none resize-none font-medium text-gray-700 text-base leading-relaxed shadow-inner mb-3 min-h-[300px]" placeholder="Start writing here..."></textarea>
-                <button onclick="evaluateWriting()" id="btnEvalWriting" class="bg-orange-600 hover:bg-orange-700 text-white py-3 rounded-lg font-bold shadow-md transition flex items-center justify-center"><i class="fas fa-check-double mr-2"></i> Chấm điểm & Sửa lỗi</button>
-                <div id="writingFeedback" class="mt-4 hidden p-4 bg-gray-50 border border-gray-200 rounded-lg">
-                    <h4 class="font-bold text-gray-800 mb-2 border-b pb-1">Đánh giá của AI:</h4>
+                
+                <div class="flex space-x-2">
+                    <button onclick="evaluateWriting()" id="btnEvalWriting" class="flex-1 bg-orange-600 hover:bg-orange-700 text-white py-3 rounded-lg font-bold shadow-md transition flex items-center justify-center"><i class="fas fa-check-double mr-2"></i> Chấm điểm & Sửa lỗi</button>
+                </div>
+
+                <div id="writingFeedback" class="mt-4 hidden p-4 bg-gray-50 border border-gray-200 rounded-lg relative">
+                    <div class="flex justify-between items-center border-b pb-2 mb-2">
+                        <h4 class="font-bold text-gray-800">Đánh giá của AI:</h4>
+                         <button onclick="downloadWritingWord()" class="text-blue-600 hover:text-blue-800 text-xs font-bold border border-blue-200 px-2 py-1 rounded bg-white"><i class="fas fa-file-word mr-1"></i> Xuất Word</button>
+                    </div>
                     <div id="feedbackContent" class="text-sm text-gray-700 leading-relaxed mb-4"></div>
+                    
                     <div class="bg-blue-50 p-3 rounded border border-blue-100 flex items-center justify-between">
                         <div class="flex items-center space-x-2 w-full">
                             <span class="text-xs font-bold text-blue-700">Lấy từ vựng hay:</span>
@@ -971,18 +1036,35 @@
             ]
         };
         
+        // Reading Parts
+        const READING_PARTS = {
+            "TOEIC": [
+                { id: "part5", name: "Part 5: Incomplete Sentences" },
+                { id: "part6", name: "Part 6: Text Completion" },
+                { id: "part7", name: "Part 7: Reading Comprehension" }
+            ],
+            "IELTS": [
+                { id: "passage1", name: "Passage 1 (General/Factual)" },
+                { id: "passage2", name: "Passage 2 (Discursive/Workplace)" },
+                { id: "passage3", name: "Passage 3 (Analytical/Academic)" }
+            ]
+        };
+        
         let grammarQuizData = [];
         let vocabQuizData = []; // Store Vocab Questions
         let failedGrammarTopics = new Set(); 
         let grammarVocabList = []; 
         let rawVocabToolData = ""; 
         let currentVocabType = "TOEIC";
+        let currentReadingData = null; // Store Reading Data (Passage + Qs)
 
         // --- APP INIT ---
         function initApp() {
             renderGrammarTree();
             renderVocabTopics(); // Init Vocab UI
             updateApiKeyUI();
+            updateWriteTasks(); // Init Write Tasks
+            updateReadParts(); // Init Reading Parts
         }
 
         // --- API KEY UI LOGIC ---
@@ -1215,6 +1297,246 @@
                 });
             } catch(e) { container.innerHTML = '<span class="text-xs text-red-400">Lỗi. Kiểm tra API Key.</span>'; }
         }
+
+        // --- READING MODULE (UPDATED) ---
+        function updateReadParts() {
+            const exam = document.getElementById('readExamType').value;
+            const select = document.getElementById('readExamPart');
+            select.innerHTML = '';
+            
+            READING_PARTS[exam].forEach(p => {
+                const opt = document.createElement('option');
+                opt.value = p.id;
+                opt.innerText = p.name;
+                select.appendChild(opt);
+            });
+        }
+        
+        async function generateReadingTask() {
+            const exam = document.getElementById('readExamType').value;
+            const part = document.getElementById('readExamPart').value;
+            const topic = document.getElementById('readTopic').value || "General Business/Academic";
+            const level = document.getElementById('readLevel').value;
+
+            document.getElementById('readingModal').classList.add('hidden');
+            showLoader("AI đang viết bài đọc & soạn câu hỏi...");
+            
+            // Construct Prompt
+            const prompt = `
+            Act as an expert ${exam} exam writer. Create a ${part} reading task.
+            Topic: ${topic}.
+            Level: ${level}.
+            
+            Task Requirements:
+            1. Generate a reading passage appropriate for ${exam} ${part} (approx 200-400 words).
+            2. Create 3-5 multiple choice questions (A, B, C, D).
+            3. For each question, provide a detailed "Thinking Process" guide.
+            
+            Output STRICT JSON format:
+            {
+                "title": "Passage Title",
+                "passage": "Full reading text here...",
+                "questions": [
+                    {
+                        "id": 1,
+                        "question": "Question text...",
+                        "options": ["Option A", "Option B", "Option C", "Option D"],
+                        "correct_index": 0, (0 for A, 1 for B, etc.)
+                        "guide": {
+                            "skim_loc": "Paragraph 1, Line 3...", (Where to find info)
+                            "keywords": "keyword1, keyword2...", (Words to scan for)
+                            "nudge": "Notice the synonym for '...' used in the text.", (Hint without giving answer)
+                            "explanation": "Full explanation why this option is correct and others are wrong."
+                        }
+                    }
+                ]
+            }
+            `;
+
+            try {
+                const data = await callGeminiAPI('gemini-2.5-flash-preview-09-2025', { contents: [{ parts: [{ text: prompt }] }] });
+                let txt = getSafeText(data).replace(/```json/g, '').replace(/```/g, '').trim();
+                
+                try {
+                    currentReadingData = JSON.parse(txt);
+                } catch(e) {
+                     // Fallback simple parsing if needed, but usually strict json works
+                     const firstBracket = txt.indexOf('{');
+                     const lastBracket = txt.lastIndexOf('}');
+                     if(firstBracket !== -1 && lastBracket !== -1) {
+                         currentReadingData = JSON.parse(txt.substring(firstBracket, lastBracket + 1));
+                     } else throw e;
+                }
+                
+                renderReadingTask();
+                showToast("Đã tạo đề Reading thành công!");
+
+            } catch(e) {
+                alert("Lỗi AI: " + e.message);
+            } finally {
+                hideLoader();
+            }
+        }
+
+        function renderReadingTask() {
+            if(!currentReadingData) return;
+            
+            // Switch view
+            switchTab('reading');
+            
+            // Render Passage
+            document.getElementById('readingPlaceholder').classList.add('hidden');
+            const display = document.getElementById('readingDisplay');
+            display.classList.remove('hidden');
+            display.innerHTML = `
+                <h2 class="text-xl font-bold text-gray-800 mb-3 border-b pb-2">${currentReadingData.title || 'Reading Passage'}</h2>
+                <div class="prose prose-sm max-w-none text-gray-700 bg-gray-50 p-4 rounded-lg border border-gray-100 shadow-inner">
+                    ${currentReadingData.passage.replace(/\n/g, '<br><br>')}
+                </div>
+            `;
+            
+            // Render Questions
+            const qContainer = document.getElementById('readingQuizContainer');
+            qContainer.innerHTML = '';
+            
+            currentReadingData.questions.forEach((q, idx) => {
+                const qDiv = document.createElement('div');
+                qDiv.className = "p-3 bg-gray-50 rounded border border-gray-200 mb-4";
+                
+                let opts = '';
+                q.options.forEach((opt, oIdx) => {
+                    opts += `
+                        <label class="flex items-start space-x-2 mt-2 cursor-pointer p-2 hover:bg-white rounded transition rq-option-label" id="rq_lbl_${idx}_${oIdx}">
+                            <input type="radio" name="rq_${idx}" value="${oIdx}" class="mt-1 form-radio text-green-600">
+                            <span class="text-sm text-gray-700">${opt}</span>
+                        </label>
+                    `;
+                });
+
+                qDiv.innerHTML = `
+                    <div class="font-bold text-sm text-gray-800 mb-2">Q${idx+1}: ${q.question}</div>
+                    <div class="flex flex-col">${opts}</div>
+                    <div id="rq_res_${idx}" class="mt-2 text-xs font-bold"></div>
+                    
+                    <div class="mt-2 flex justify-end">
+                        <button onclick="toggleReadingHint(${idx})" class="text-xs text-orange-600 hover:text-orange-800 font-bold flex items-center">
+                            <i class="far fa-lightbulb mr-1"></i> Gợi ý (Mớm ý)
+                        </button>
+                    </div>
+                    <div id="rq_hint_${idx}" class="reading-hint-box hidden">
+                        <div><b><i class="fas fa-search mr-1"></i>Vị trí:</b> ${q.guide.skim_loc}</div>
+                        <div><b><i class="fas fa-key mr-1"></i>Keywords:</b> ${q.guide.keywords}</div>
+                        <div class="italic text-gray-600 mt-1">"${q.guide.nudge}"</div>
+                    </div>
+                    <div id="rq_exp_${idx}" class="hidden mt-2 p-2 bg-green-50 text-green-800 text-xs rounded border border-green-100">
+                        <b><i class="fas fa-check-circle mr-1"></i>Giải thích chi tiết:</b><br>
+                        ${q.guide.explanation}
+                    </div>
+                `;
+                qContainer.appendChild(qDiv);
+            });
+            
+            // Show check button and action bar
+            document.getElementById('btnCheckReading').classList.remove('hidden');
+            document.getElementById('readingActionBar').classList.remove('hidden');
+            document.getElementById('readingActionBar').classList.add('flex');
+            document.getElementById('readingExportUI').classList.remove('hidden');
+        }
+        
+        function toggleReadingHint(idx) {
+            const h = document.getElementById(`rq_hint_${idx}`);
+            if(h.style.display === 'block') h.style.display = 'none';
+            else h.style.display = 'block';
+        }
+
+        function checkReadingQuiz() {
+            if(!currentReadingData) return;
+            let correct = 0;
+            
+            currentReadingData.questions.forEach((q, idx) => {
+                const selected = document.querySelector(`input[name="rq_${idx}"]:checked`);
+                const resEl = document.getElementById(`rq_res_${idx}`);
+                const expEl = document.getElementById(`rq_exp_${idx}`);
+                
+                // Disable inputs
+                document.querySelectorAll(`input[name="rq_${idx}"]`).forEach(i => i.disabled = true);
+                
+                if(selected) {
+                    const val = parseInt(selected.value);
+                    if(val === q.correct_index) {
+                        correct++;
+                        resEl.innerHTML = '<span class="text-green-600">Chính xác!</span>';
+                        selected.parentElement.classList.add('bg-green-100');
+                    } else {
+                        resEl.innerHTML = '<span class="text-red-500">Sai rồi.</span>';
+                        selected.parentElement.classList.add('bg-red-100');
+                        // Highlight correct
+                        document.getElementById(`rq_lbl_${idx}_${q.correct_index}`).classList.add('bg-green-50', 'border-green-300', 'border');
+                    }
+                } else {
+                    resEl.innerHTML = '<span class="text-gray-400">Chưa làm.</span>';
+                    document.getElementById(`rq_lbl_${idx}_${q.correct_index}`).classList.add('bg-green-50', 'border-green-300', 'border');
+                }
+                
+                // Show Explanation
+                expEl.classList.remove('hidden');
+                document.getElementById(`rq_hint_${idx}`).style.display = 'block'; // Show hint box too as full review
+            });
+            
+            showToast(`Bạn đúng ${correct}/${currentReadingData.questions.length} câu.`);
+            document.getElementById('btnCheckReading').classList.add('hidden');
+        }
+
+        function exportReadingToWord() {
+            if(!currentReadingData) return alert("Chưa có bài đọc.");
+            
+            let content = `
+                <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+                <head><meta charset='utf-8'><title>Reading Export</title>
+                <style>body {font-family: 'Times New Roman'; line-height: 1.5;} .q {margin-bottom: 15px;} .ans {color: green; font-weight: bold;}</style>
+                </head>
+                <body>
+                    <h1>English Master - Reading Task</h1>
+                    <h2>${currentReadingData.title}</h2>
+                    <p>${currentReadingData.passage.replace(/\n/g, '<br>')}</p>
+                    <hr>
+                    <h3>Questions</h3>
+            `;
+            
+            currentReadingData.questions.forEach((q, i) => {
+                content += `<div class='q'><b>Q${i+1}: ${q.question}</b><br>`;
+                q.options.forEach((opt, oi) => {
+                    content += `${String.fromCharCode(65+oi)}. ${opt}<br>`;
+                });
+                content += `</div>`;
+            });
+            
+            content += `<br><hr><h3>Answer Key & Explanations</h3>`;
+            
+            currentReadingData.questions.forEach((q, i) => {
+                 content += `<p><b>Q${i+1}: ${String.fromCharCode(65+q.correct_index)}</b><br>`;
+                 content += `<i>Keywords:</i> ${q.guide.keywords}<br>`;
+                 content += `<i>Explanation:</i> ${q.guide.explanation}</p>`;
+            });
+            
+            content += `</body></html>`;
+            
+            const blob = new Blob(['\ufeff', content], { type: 'application/msword' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `Reading_Test_${Date.now()}.doc`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function exportReadingToExcel() {
+             const txt = document.getElementById('readingDisplay').innerText.replace('Reading Passage', '');
+             const level = document.getElementById('exportLevelReading').value;
+             exportDeepDrillString(txt, level);
+        }
+
+        // ... [Rest of Audio/Gen/TTS code] ...
 
         // --- AUDIO GEN & TTS ---
         function setAudioGenMode(mode) {
@@ -1882,12 +2204,29 @@
             
             if(transcriptData.length > 0) {
                 transcriptData.forEach((seg, i) => {
-                    const el = document.getElementById(`ts_${i}`);
-                    if(cur >= seg.start && cur <= seg.end) {
-                        el.classList.add('t-active');
-                        el.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
-                    } else {
-                        el.classList.remove('t-active');
+                    // English Sync
+                    const elEn = document.getElementById(`ts_${i}`);
+                    if (elEn) {
+                        if(cur >= seg.start && cur <= seg.end) {
+                            elEn.classList.add('t-active');
+                            elEn.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+                        } else {
+                            elEn.classList.remove('t-active');
+                        }
+                    }
+
+                    // Vietnamese Sync
+                    const elVi = document.getElementById(`tv_${i}`);
+                    if (elVi) {
+                         if(cur >= seg.start && cur <= seg.end) {
+                            elVi.classList.add('tv-active');
+                            // Only scroll VI if visible to avoid double scroll jank
+                            if(!document.getElementById('transcriptTranslation').classList.contains('hidden')) {
+                                elVi.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+                            }
+                        } else {
+                            elVi.classList.remove('tv-active');
+                        }
                     }
                 });
             }
@@ -1922,6 +2261,24 @@
         }
 
         // --- DICTATION & REALTIME TRANSCRIPT ---
+        function toggleTranscriptVisibility() {
+            const wrapper = document.getElementById('transcriptWrapper');
+            const mask = document.getElementById('transcriptHiddenMask');
+            const btn = document.getElementById('btnToggleTranscript');
+
+            if (wrapper.classList.contains('hidden')) {
+                wrapper.classList.remove('hidden');
+                mask.classList.add('hidden');
+                btn.classList.add('bg-indigo-100', 'text-indigo-800');
+                btn.innerHTML = '<i class="fas fa-eye-slash mr-1"></i> Ẩn Transcript';
+            } else {
+                wrapper.classList.add('hidden');
+                mask.classList.remove('hidden');
+                btn.classList.remove('bg-indigo-100', 'text-indigo-800');
+                btn.innerHTML = '<i class="fas fa-eye mr-1"></i> Hiện Transcript';
+            }
+        }
+
         function toggleTranscriptLang(lang) {
             const contentEn = document.getElementById('transcriptContent');
             const contentVi = document.getElementById('transcriptTranslation');
@@ -1969,6 +2326,12 @@
                 renderRealtimeTranscript();
                 targetText.value = segments.map(s => s.text).join(' ');
                 hasTranscript = true; 
+                
+                // Show Transcript by default after generation
+                if(document.getElementById('transcriptWrapper').classList.contains('hidden')) {
+                     toggleTranscriptVisibility();
+                }
+
                 showToast("Đã tạo Transcript + Dịch nghĩa!");
             } catch(e) { alert("Lỗi Transcribe: " + e.message); }
         }
@@ -1996,8 +2359,9 @@
                 contentEn.appendChild(spanEn);
 
                 const divVi = document.createElement('div');
-                divVi.className = 'mb-2 p-1 border-l-2 border-indigo-200 pl-2 hover:bg-indigo-50 transition cursor-pointer';
-                divVi.innerHTML = `<span class="text-[10px] font-mono text-gray-400 mr-2">${formatTime(seg.start)}</span>${seg.vi || "..."}`;
+                divVi.id = `tv_${index}`; // Assign ID for Sync
+                divVi.className = 'tv-segment mb-2 p-1 pl-2 hover:bg-indigo-50 transition cursor-pointer text-sm leading-relaxed';
+                divVi.innerHTML = `<span class="text-[10px] font-mono text-gray-400 mr-2 select-none">${formatTime(seg.start)}</span>${seg.vi || "..."}`;
                 divVi.onclick = () => {
                      audio.currentTime = seg.start;
                     audio.play();
@@ -2067,185 +2431,162 @@
             } catch(e) { res.innerText = "Error: " + e.message; } finally { btn.disabled = false; btn.innerHTML = `<i class="fas fa-microscope mr-1"></i> Phân tích lỗi (AI)`; }
         }
 
-        // --- QUIZ & READING & WRITING ---
-        async function generateQuiz() {
-            if(!currentAudioBase64) return alert("Thiếu Audio.");
-            const btn = document.getElementById('btnGenQuiz'); btn.disabled = true; btn.innerText = "Đang tạo...";
-            try {
-                const prompt = `Generate 5 multiple choice questions (JSON) based on audio. Format: [{"q":"...","options":["..."],"correct":0,"hint":"...","start":0,"end":5}]`;
-                const data = await callGeminiAPI('gemini-2.5-flash-preview-09-2025', {
-                    contents: [{ parts: [{ text: prompt }, { inline_data: { mime_type: currentMimeType, data: currentAudioBase64 } }] }]
-                });
-
-                let txt = data.candidates?.[0]?.content?.parts?.[0]?.text;
-                txt = txt.replace(/```json/g,'').replace(/```/g,'').trim();
-                quizData = JSON.parse(txt.match(/\[[\s\S]*\]/)[0]);
-                renderQuiz();
-            } catch(e) { alert("Lỗi: " + e.message); } finally { btn.disabled = false; btn.innerHTML = '<i class="fas fa-bolt mr-2 text-yellow-300"></i> Tạo câu hỏi ngay'; }
-        }
-
-        function renderQuiz() {
-            const list = document.getElementById('questionsList'); list.innerHTML = '';
-            document.getElementById('quizContent').classList.remove('hidden');
-            document.getElementById('quizCountBadge').innerText = `${quizData.length} câu`;
-            quizData.forEach((q, i) => {
-                let opts = '';
-                q.options.forEach((o,j) => opts += `<div class="mb-2"><input type="radio" name="q${i}" id="q${i}_${j}" value="${j}" class="mr-2"><label for="q${i}_${j}">${o}</label></div>`);
-                list.innerHTML += `<div class="bg-white p-4 rounded shadow-sm border"><div class="flex justify-between mb-2"><span class="font-bold text-indigo-700">Q${i+1}</span><button onclick="playSegment(${q.start}, ${q.end})" class="text-xs bg-blue-50 text-blue-600 px-2 py-1 rounded">Play Hint</button></div><p class="font-bold mb-2">${q.q}</p>${opts}</div>`;
-            });
-        }
-        
-        function checkQuizAll() {
-            let score = 0;
-            quizData.forEach((q,i) => {
-                const sel = document.querySelector(`input[name="q${i}"]:checked`);
-                if(sel && parseInt(sel.value)===q.correct) score++;
-            });
-            alert(`Bạn đúng ${score}/${quizData.length} câu.`);
-        }
-
-        function switchReadingMode(mode) {
-            const auto = document.getElementById('readModeAuto'); const man = document.getElementById('readModeManual');
-            const btnA = document.getElementById('tabReadAuto'); const btnM = document.getElementById('tabReadManual');
-            if(mode==='auto') { auto.classList.remove('hidden'); man.classList.add('hidden'); btnA.classList.add('border-green-600','text-green-700'); btnM.classList.remove('border-green-600','text-green-700'); }
-            else { auto.classList.add('hidden'); man.classList.remove('hidden'); btnM.classList.add('border-green-600','text-green-700'); btnA.classList.remove('border-green-600','text-green-700'); }
-        }
-
-        async function generateReadingTask() {
-            const isManual = !document.getElementById('readModeManual').classList.contains('hidden');
-            let prompt = "";
-            if(isManual) {
-                const txt = document.getElementById('manualReadText').value; if(!txt) return alert("Nhập text.");
-                prompt = `Read text: "${txt}". Generate 5 MCQs JSON. Format: { "passage": "${txt.replace(/"/g,'\\"')}", "questions": [{"q":"...","options":["..."],"correct":0,"explanation":"..."}] }`;
-            } else {
-                const topic = document.getElementById('readTopic').value || "Technology";
-                const level = document.getElementById('readLevel').value;
-                prompt = `Write article on "${topic}" level ${level}. Then 5 MCQs. Output JSON: { "passage": "HTML...", "questions": [{"q":"...","options":["..."],"correct":0,"explanation":"..."}] }`;
-            }
-            const btn = document.getElementById('btnGenReading'); btn.disabled=true; btn.innerHTML="Đang tạo...";
-            try {
-                const data = await callGeminiAPI('gemini-2.5-flash-preview-09-2025', { contents: [{ parts: [{ text: prompt }] }] });
-
-                let txt = data.candidates?.[0]?.content?.parts?.[0]?.text.replace(/```json/g,'').replace(/```/g,'').trim();
-                const json = JSON.parse(txt.match(/\{[\s\S]*\}/)[0]);
-                
-                document.getElementById('readingPlaceholder').classList.add('hidden');
-                readingDisplay.classList.remove('hidden');
-                readingDisplay.innerHTML = `<h2 class="text-xl font-bold mb-2">Reading Passage</h2>${json.passage}`;
-                document.getElementById('readingExportUI').classList.remove('hidden');
-                document.getElementById('readingActionBar').classList.remove('hidden'); 
-                readingQuizData = json.questions;
-                renderReadingQuiz();
-                document.getElementById('readingModal').classList.add('hidden');
-            } catch(e) { alert("Lỗi: " + e.message); } finally { btn.disabled=false; btn.innerHTML="Tạo Đề Ngay"; }
-        }
-        
-        function renderReadingQuiz() {
-            const c = document.getElementById('readingQuizContainer'); c.innerHTML='';
-            readingQuizData.forEach((q,i) => {
-                let opts = ''; q.options.forEach((o,j) => opts += `<div class="mb-2"><input type="radio" name="rq${i}" id="rq${i}_${j}" value="${j}" class="mr-2"><label>${o}</label></div>`);
-                c.innerHTML += `<div class="p-3 bg-white border rounded mb-2"><div class="font-bold">Q${i+1}: ${q.q}</div>${opts}<div id="rexp${i}" class="hidden mt-2 text-xs bg-blue-50 p-2 text-blue-800">${q.explanation}</div></div>`;
-            });
-        }
-        
-        function checkReadingQuiz() {
-            let score = 0;
-            readingQuizData.forEach((q,i) => {
-                const sel = document.querySelector(`input[name="rq${i}"]:checked`);
-                document.getElementById(`rexp${i}`).classList.remove('hidden');
-                if(sel && parseInt(sel.value)===q.correct) score++;
-            });
-            alert(`Đúng ${score}/${readingQuizData.length}`);
-        }
-
-        function exportReadingToWord() {
-            const passage = document.getElementById('readingDisplay').innerText;
-            if(!passage) return alert("Chưa có bài đọc.");
-            
-            let content = `
-                <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
-                <head><meta charset='utf-8'><title>Reading Export</title></head>
-                <body>
-                    <h1>Reading Passage</h1>
-                    <div>${passage}</div>
-                    <h2>Questions</h2>
-            `;
-            
-            readingQuizData.forEach((q, i) => {
-                content += `<p><strong>Q${i+1}: ${q.q}</strong></p>`;
-                q.options.forEach((opt, j) => {
-                    content += `<p style="margin-left: 20px;">${String.fromCharCode(65+j)}. ${opt}</p>`;
-                });
-                content += `<p style="color: blue; font-size: 0.9em;"><em>Answer Key: ${String.fromCharCode(65+q.correct)} - ${q.explanation}</em></p>`;
-            });
-            
-            content += "</body></html>";
-            
-            const blob = new Blob(['\ufeff', content], { type: 'application/msword' });
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = 'Reading_Task.doc';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        }
-
-        async function exportReadingToExcel() {
-            const passage = document.getElementById('readingDisplay').innerText.replace('Reading Passage', '');
-            if(!passage) return alert("Chưa có bài đọc.");
-            
-            showLoader("Đang trích xuất từ vựng...");
-            
-            const prompt = `Extract 20 hard vocabulary words from this text for B2/C1 learners. Output CSV (Word, Meaning, Type). IMPORTANT: Use semicolons (;) to separate multiple meanings. Do NOT use commas inside a column. Text: ${passage.substring(0,2000)}`;
-            
-            try {
-                const data = await callGeminiAPI('gemini-2.5-flash-preview-09-2025', { contents: [{ parts: [{ text: prompt }] }] });
-
-                let csv = data.candidates?.[0]?.content?.parts?.[0]?.text.replace(/```csv/g, '').replace(/```/g, '').trim();
-                downloadCSV(csv, 'Vocabulary_List.csv');
-                showToast("Đã tải danh sách từ vựng!");
-            } catch(e) { alert(e); } finally { hideLoader(); }
-        }
-
         // --- WRITING MODULE ---
         function toggleWritingMode(mode) {
             const auto = document.getElementById('writeAutoUI'); const man = document.getElementById('writeManualUI');
             if(mode==='auto') { auto.classList.remove('hidden'); man.classList.add('hidden'); }
             else { auto.classList.add('hidden'); man.classList.remove('hidden'); }
         }
-        
-        async function generateWritingTopic() {
-            const level = document.getElementById('writeLevel').value;
-            const btn = document.getElementById('btnGenWriteTopic'); btn.disabled=true;
-            try {
-                const data = await callGeminiAPI('gemini-2.5-flash-preview-09-2025', { contents: [{ parts: [{ text: `Generate random writing topic for ${level}. Text only.` }] }] });
-                const topic = data.candidates?.[0]?.content?.parts?.[0]?.text;
-                const d = document.getElementById('writingTopicDisplay'); d.innerText=topic; d.classList.remove('hidden');
-                document.getElementById('btnGetHints').classList.remove('hidden');
-            } catch(e){alert("Lỗi: " + e.message);} finally { btn.disabled=false; }
+
+        const WRITE_TASKS = {
+            "TOEIC": [
+                {id: "email", name: "Write an Email (Part 2)"},
+                {id: "essay", name: "Write an Essay (Part 3)"}
+            ],
+            "IELTS": [
+                {id: "task1", name: "Task 1: Chart/Graph/Map"},
+                {id: "task2", name: "Task 2: Essay"}
+            ]
+        };
+
+        function updateWriteTasks() {
+            const exam = document.getElementById('writeExamType').value;
+            const select = document.getElementById('writeTaskType');
+            select.innerHTML = '';
+            WRITE_TASKS[exam].forEach(t => {
+                const opt = document.createElement('option');
+                opt.value = t.id; opt.innerText = t.name;
+                select.appendChild(opt);
+            });
         }
         
+        async function generateWritingTopic() {
+            const exam = document.getElementById('writeExamType').value;
+            const task = document.getElementById('writeTaskType').value;
+            const level = document.getElementById('writeLevel').value;
+            
+            const btn = document.getElementById('btnGenWriteTopic'); btn.disabled=true; btn.innerText = "Đang tạo...";
+            
+            const prompt = `Generate a realistic ${exam} Writing ${task} topic. Level: ${level}.
+            Output TEXT ONLY. Do not wrap in quotes.
+            Example format for Task 1: "The chart below shows..."
+            Example format for Essay: "Some people believe that..."
+            `;
+
+            try {
+                const data = await callGeminiAPI('gemini-2.5-flash-preview-09-2025', { contents: [{ parts: [{ text: prompt }] }] });
+                const topic = data.candidates?.[0]?.content?.parts?.[0]?.text;
+                
+                const d = document.getElementById('writingTopicDisplay'); 
+                d.innerText=topic; 
+                d.classList.remove('hidden');
+                
+                document.getElementById('btnGetHints').classList.remove('hidden');
+                document.getElementById('btnGetOutline').classList.remove('hidden');
+            } catch(e){alert("Lỗi: " + e.message);} finally { btn.disabled=false; btn.innerHTML = '<i class="fas fa-dice mr-1"></i> Tạo Đề Mới'; }
+        }
+        
+        async function getWritingOutline() {
+            const topic = document.getElementById('writingTopicDisplay').innerText || document.getElementById('writeManualInput').value;
+            if(!topic) return alert("Chưa có đề bài.");
+            
+            const btn = document.getElementById('btnGetOutline'); btn.disabled = true; btn.innerText = "Đang tư duy...";
+            const exam = document.getElementById('writeExamType').value;
+            
+            const prompt = `
+            Act as an ${exam} Writing expert. For this topic: "${topic}", provide a detailed Thinking Process & Outline (Dàn ý) in Vietnamese.
+            Structure:
+            1. Brainstorming (Tìm ý): How to generate ideas?
+            2. Structure (Bố cục): Intro, Body 1, Body 2, Conclusion.
+            3. Key Vocabulary (Từ vựng ăn điểm).
+            4. Thesis Statement / Overview sample.
+            `;
+
+            try {
+                const data = await callGeminiAPI('gemini-2.5-flash-preview-09-2025', { contents: [{ parts: [{ text: prompt }] }] });
+                const html = data.candidates?.[0]?.content?.parts?.[0]?.text.replace(/\n/g,'<br>').replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
+                
+                const h = document.getElementById('writingHints'); 
+                h.innerHTML = `<div class="p-2 bg-orange-50 border-l-4 border-orange-400 text-sm">${html}</div>`; 
+                h.classList.remove('hidden');
+            } catch(e){ alert("Lỗi: " + e.message); } finally { btn.disabled = false; btn.innerText = "Lập Dàn Ý & Tư Duy (AI)"; }
+        }
+
         async function getWritingHints() {
             const topic = document.getElementById('writingTopicDisplay').innerText || document.getElementById('writeManualInput').value;
             if(!topic) return alert("Chưa có topic.");
             try {
-                const data = await callGeminiAPI('gemini-2.5-flash-preview-09-2025', { contents: [{ parts: [{ text: `Hints/Vocab for topic: "${topic}". Vietnamese.` }] }] });
-                const h = document.getElementById('writingHints'); h.innerHTML=data.candidates?.[0]?.content?.parts?.[0]?.text.replace(/\n/g,'<br>'); h.classList.remove('hidden');
+                const data = await callGeminiAPI('gemini-2.5-flash-preview-09-2025', { contents: [{ parts: [{ text: `List 10 key vocabulary words/collocations for this topic: "${topic}". Vietnamese meanings.` }] }] });
+                const h = document.getElementById('writingHints'); 
+                const prev = h.innerHTML;
+                h.innerHTML = prev + `<div class="mt-2 pt-2 border-t border-gray-200"><b>Từ vựng gợi ý:</b><br>${data.candidates?.[0]?.content?.parts?.[0]?.text.replace(/\n/g,'<br>')}</div>`; 
+                h.classList.remove('hidden');
             } catch(e){alert("Lỗi: " + e.message);}
         }
 
         async function evaluateWriting() {
             const topic = document.getElementById('writingTopicDisplay').innerText || document.getElementById('writeManualInput').value;
             const essay = document.getElementById('writingInput').value;
+            const exam = document.getElementById('writeExamType').value;
+            
             if(!essay) return alert("Chưa có bài viết.");
-            const btn = document.getElementById('btnEvalWriting'); btn.innerText = "Chấm điểm..."; btn.disabled = true;
+            
+            const btn = document.getElementById('btnEvalWriting'); btn.innerText = "Đang chấm điểm..."; btn.disabled = true;
+            
+            const prompt = `Evaluate this ${exam} writing task.
+            Topic: ${topic}
+            Student Essay: ${essay}
+            
+            Task:
+            1. Estimated Band Score (IELTS) or Score (TOEIC).
+            2. Detailed feedback on Task Response, Coherence, Lexical Resource, Grammatical Range.
+            3. Corrected version (list errors and fixes).
+            Language: Vietnamese.
+            `;
+
             try {
-                const data = await callGeminiAPI('gemini-2.5-flash-preview-09-2025', { contents: [{ parts: [{ text: `Evaluate essay. Topic: ${topic}. Essay: ${essay}. Vietnamese.` }] }] });
-                document.getElementById('feedbackContent').innerHTML = data.candidates?.[0]?.content?.parts?.[0]?.text.replace(/\n/g, '<br>');
+                const data = await callGeminiAPI('gemini-2.5-flash-preview-09-2025', { contents: [{ parts: [{ text: prompt }] }] });
+                document.getElementById('feedbackContent').innerHTML = data.candidates?.[0]?.content?.parts?.[0]?.text.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
                 document.getElementById('writingFeedback').classList.remove('hidden');
-            } catch(e) { alert("Lỗi: " + e.message); } finally { btn.innerText = "Chấm điểm & Sửa lỗi"; btn.disabled = false; }
+            } catch(e) { alert("Lỗi: " + e.message); } finally { btn.innerHTML = '<i class="fas fa-check-double mr-2"></i> Chấm điểm & Sửa lỗi'; btn.disabled = false; }
         }
+
+        function downloadWritingWord() {
+            const topic = document.getElementById('writingTopicDisplay').innerText || document.getElementById('writeManualInput').value;
+            const essay = document.getElementById('writingInput').value.replace(/\n/g, '<br>');
+            const feedback = document.getElementById('feedbackContent').innerHTML;
+            
+            if(!topic || !essay) return alert("Chưa có nội dung để tải.");
+
+            const content = `
+                <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+                <head><meta charset='utf-8'><title>Writing Task Export</title>
+                <style>body {font-family: 'Times New Roman';}</style>
+                </head>
+                <body>
+                    <h1>English Master - Writing Task</h1>
+                    <h3>Đề bài:</h3>
+                    <p>${topic}</p>
+                    <hr>
+                    <h3>Bài làm của bạn:</h3>
+                    <p>${essay}</p>
+                    <hr>
+                    <h3>Đánh giá & Chấm điểm của AI:</h3>
+                    <div>${feedback}</div>
+                </body></html>
+            `;
+
+            const blob = new Blob(['\ufeff', content], { type: 'application/msword' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `Writing_Feedback_${Date.now()}.doc`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // ... [Rest of code remains unchanged] ...
+        // Ensure functions like exportDeepDrill, etc are still available.
 
         // --- EXPORT TO DEEP DRILL ---
         async function exportDeepDrill(sourceId, levelId) {
