@@ -956,6 +956,21 @@
                         <option value="C2">C2 (Thành thạo)</option>
                     </select>
 
+                    <!-- Import Vocab Section for Vocab Quiz -->
+                    <div class="mb-3">
+                        <div class="flex items-center justify-between mb-2">
+                            <label class="text-xs font-bold text-gray-500 uppercase">Tích hợp Từ vựng (CSV):</label>
+                            <span id="vocabVocabStatus" class="text-[10px] text-gray-400 font-mono">Chưa tải</span>
+                        </div>
+                        <div class="relative group">
+                            <input type="file" id="vocabVocabInput" accept=".csv" class="hidden" onchange="handleVocabVocabUpload(event)">
+                            <label for="vocabVocabInput" class="cursor-pointer bg-white border border-cyan-200 text-cyan-700 hover:bg-cyan-50 w-full py-1.5 rounded text-xs font-bold flex items-center justify-center transition shadow-sm">
+                                <i class="fas fa-file-import mr-2"></i> Tải danh sách từ
+                            </label>
+                        </div>
+                        <p class="text-[10px] text-gray-500 mt-1 italic">AI sẽ ưu tiên dùng từ vựng trong file CSV của bạn.</p>
+                    </div>
+
                     <button onclick="generateVocabQuiz()" id="btnGenVocab" class="w-full bg-cyan-700 hover:bg-cyan-800 text-white py-2.5 rounded font-bold shadow-md transition text-sm flex items-center justify-center">
                         <i class="fas fa-bolt mr-2 text-yellow-300"></i> Tạo Đề (15 Câu)
                     </button>
@@ -966,7 +981,7 @@
                         <i class="fas fa-info-circle mr-1"></i> Tính năng:
                         <ul class="list-disc ml-4 mt-1 space-y-1">
                             <li>15 câu hỏi trắc nghiệm</li>
-                            <li>Tooltip hiển thị nghĩa khi di chuột vào đáp án</li>
+                            <li>Gợi ý: Cụm từ cố định + Dịch câu hỏi</li>
                             <li>Hỗ trợ xuất Excel/CSV</li>
                         </ul>
                     </div>
@@ -1118,6 +1133,7 @@
         let vocabQuizData = []; // Store Vocab Questions
         let failedGrammarTopics = new Set(); 
         let grammarVocabList = []; 
+        let vocabVocabList = []; // NEW: Store Vocab Module Custom List
         let rawVocabToolData = ""; 
         let currentVocabType = "TOEIC";
         let currentReadingData = null; // Store Reading Data (Passage + Qs)
@@ -2331,6 +2347,35 @@
             });
         }
 
+        // NEW: Vocab CSV Upload Handler
+        function handleVocabVocabUpload(event) {
+            const file = event.target.files[0];
+            if(!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const text = e.target.result;
+                const rows = text.split(/\r?\n/);
+                const words = [];
+                rows.forEach(row => {
+                    const cols = row.split(',');
+                    // Simple parsing: assumes words are in the first column or just a list
+                    if(cols[0] && cols[0].toLowerCase() !== 'word' && cols[0].trim().length > 1) {
+                        words.push(cols[0].trim());
+                    }
+                });
+                
+                const shuffled = words.sort(() => 0.5 - Math.random());
+                vocabVocabList = shuffled.slice(0, 50); // Take max 50 for prompt context
+                
+                document.getElementById('vocabVocabStatus').innerText = `Đã tải: ${words.length} từ`;
+                document.getElementById('vocabVocabStatus').classList.remove('text-gray-400');
+                document.getElementById('vocabVocabStatus').classList.add('text-green-600', 'font-bold');
+                showToast(`Đã import ${words.length} từ vựng! AI sẽ ưu tiên dùng chúng.`);
+            };
+            reader.readAsText(file);
+        }
+
         async function generateVocabQuiz() {
             const topic = document.getElementById('vocabTopicSelect').value;
             const level = document.getElementById('vocabLevel').value;
@@ -2340,17 +2385,25 @@
             btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Đang tạo đề...';
             showLoader("AI đang soạn 15 câu hỏi từ vựng...");
 
+            // Logic to include custom vocab
+            let vocabInstruction = "";
+            if (vocabVocabList.length > 0) {
+                vocabInstruction = `\nIMPORTANT: Prioritize using these vocabulary words for questions or correct answers: [${vocabVocabList.join(', ')}].`;
+            }
+
             const prompt = `Generate 15 vocabulary multiple-choice questions for ${currentVocabType}.
             Level: ${level}.
-            Topic: ${topic}.
+            Topic: ${topic}.${vocabInstruction}
             Output STRICT JSON format (Array of objects).
             Fields:
             - word (string): The key vocabulary word being tested.
             - meaning (string): Vietnamese meaning of the key word.
             - q (string): A sentence with a blank.
+            - q_vi (string): Vietnamese translation of the sentence 'q'.
             - options (array): 4 choices (one is the key word or related).
             - correct (int): Index (0-3).
             - option_meanings (array): 4 Vietnamese meanings corresponding to the options.
+            - collocations (string): Relevant fixed phrases, idioms, or grammatical structures related to the sentence/answer (e.g. "rely on", "look forward to").
             `;
 
             try {
@@ -2383,7 +2436,7 @@
         function renderVocabQuiz() {
             document.getElementById('vocabEmptyState').classList.add('hidden');
             const container = document.getElementById('vocabQuizContent');
-            container.classList.remove('hidden'); // THIS WAS THE MISSING LINE!
+            container.classList.remove('hidden'); 
             container.innerHTML = '';
             document.getElementById('vocabActionBar').classList.remove('hidden');
             document.getElementById('vocabActionBar').classList.add('flex');
@@ -2409,10 +2462,23 @@
                     `;
                 });
 
+                // Hint Content
+                const qVi = item.q_vi || "Chưa có dịch nghĩa";
+                const colloc = item.collocations || "Không có cụm từ đặc biệt";
+
                 card.innerHTML = `
                     <div class="flex justify-between items-start mb-3">
                         <span class="bg-cyan-100 text-cyan-800 text-xs font-bold px-2 py-1 rounded">Câu ${index + 1}</span>
+                        <button onclick="document.getElementById('vq_hint_${index}').classList.toggle('hidden')" class="text-xs text-orange-600 font-bold hover:text-orange-800 flex items-center">
+                             <i class="far fa-lightbulb mr-1"></i> Gợi ý
+                        </button>
                     </div>
+                    
+                    <div id="vq_hint_${index}" class="hidden mb-3 p-3 bg-orange-50 rounded border border-orange-200 text-sm">
+                        <div class="mb-1"><span class="font-bold text-orange-800">Dịch:</span> ${qVi}</div>
+                        <div><span class="font-bold text-orange-800">Cấu trúc/Cụm từ:</span> ${colloc}</div>
+                    </div>
+
                     <div class="font-medium text-lg text-gray-800 mb-4">${item.q}</div>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-2 mb-2">
                         ${optionsHtml}
@@ -2458,14 +2524,16 @@
         function exportVocabQuiz() {
             if (vocabQuizData.length === 0) return alert("Chưa có dữ liệu để xuất.");
             
-            let csv = "Question,Correct Word,Meaning,Context Sentence\n";
+            let csv = "Question,Correct Word,Meaning,Collocations,Translation\n";
             vocabQuizData.forEach(q => {
                 // Sanitize content for CSV (remove commas/quotes)
                 const safeQ = `"${q.q.replace(/"/g, '""')}"`;
                 const safeWord = `"${q.word}"`;
                 const safeMeaning = `"${q.meaning}"`;
+                const safeColloc = `"${(q.collocations || '').replace(/"/g, '""')}"`;
+                const safeTrans = `"${(q.q_vi || '').replace(/"/g, '""')}"`;
                 
-                csv += `${safeQ},${safeWord},${safeMeaning}\n`;
+                csv += `${safeQ},${safeWord},${safeMeaning},${safeColloc},${safeTrans}\n`;
             });
             
             downloadCSV(csv, `Vocab_Quiz_Export_${Date.now()}.csv`);
