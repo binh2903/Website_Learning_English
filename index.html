@@ -62,7 +62,7 @@
         .grammar-section-header { cursor: pointer; user-select: none; }
         .grammar-checkbox { accent-color: #991b1b; } /* Red-800 for grammar theme */
 
-        /* Vocab Tooltip */
+        /* Vocab Tooltip - Updated for Grammar Options too */
         .vocab-option:hover::after {
             content: attr(data-meaning);
             position: absolute;
@@ -78,6 +78,7 @@
             z-index: 10;
             opacity: 0.9;
             pointer-events: none;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
         }
 
         /* Reading Hints */
@@ -2151,7 +2152,8 @@
                 "options": ["A", "B", "C", "D"],
                 "correct": 0, (index 0-3)
                 "hint": "Short grammar rule explanation in Vietnamese",
-                "topic": "Topic name (e.g., Past Simple)"
+                "topic": "Topic name (e.g., Past Simple)",
+                "option_meanings": ["Meaning of A (VN)", "Meaning of B (VN)", "Meaning of C (VN)", "Meaning of D (VN)"] (Provide Vietnamese meaning or Word Family type for each option to help learner)
               },
               ...
             ]`;
@@ -2208,8 +2210,12 @@
                 
                 let optionsHtml = '';
                 item.options.forEach((opt, idx) => {
+                    // Grammar options might be short (e.g., "is"), so meaning might be "là".
+                    // Or grammar might be "happiness", meaning "hạnh phúc (noun)".
+                    const meaning = item.option_meanings && item.option_meanings[idx] ? item.option_meanings[idx] : "Tra từ điển";
+
                     optionsHtml += `
-                        <label class="flex items-center space-x-3 p-3 rounded-lg border border-gray-100 hover:bg-gray-50 cursor-pointer transition gq-option-label" id="gq_lbl_${index}_${idx}">
+                        <label class="vocab-option relative flex items-center space-x-3 p-3 rounded-lg border border-gray-100 hover:bg-gray-50 cursor-pointer transition gq-option-label" id="gq_lbl_${index}_${idx}" data-meaning="${meaning}">
                             <input type="radio" name="gq_${index}" value="${idx}" class="form-radio text-red-600 h-4 w-4">
                             <span class="text-gray-700">${opt}</span>
                         </label>
